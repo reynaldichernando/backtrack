@@ -1,34 +1,13 @@
 'use client'
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { PlusCircle, Play, SkipBack, SkipForward, X, ChevronDown, Search } from "lucide-react"
 import Image from "next/image"
-
-const videos = [
-  { id: "1", title: "Introduction to AI", duration: "05:30", thumbnail: "https://tse3.mm.bing.net/th?id=OVP.lHdo50d7MQSh5DQ4v7hWVgHgFo&pid=Api" },
-  { id: "2", title: "Machine Learning Basics", duration: "08:45", thumbnail: "https://tse3.mm.bing.net/th?id=OVP.lHdo50d7MQSh5DQ4v7hWVgHgFo&pid=Api" },
-  { id: "3", title: "Deep Learning Overview", duration: "10:20", thumbnail: "https://tse3.mm.bing.net/th?id=OVP.lHdo50d7MQSh5DQ4v7hWVgHgFo&pid=Api" },
-  { id: "4", title: "Data Science Fundamentals", duration: "07:15", thumbnail: "https://tse3.mm.bing.net/th?id=OVP.lHdo50d7MQSh5DQ4v7hWVgHgFo&pid=Api" },
-  { id: "5", title: "Advanced Python", duration: "12:00", thumbnail: "https://tse3.mm.bing.net/th?id=OVP.lHdo50d7MQSh5DQ4v7hWVgHgFo&pid=Api" },
-  { id: "6", title: "Data Visualization", duration: "09:50", thumbnail: "https://tse3.mm.bing.net/th?id=OVP.lHdo50d7MQSh5DQ4v7hWVgHgFo&pid=Api" },
-  { id: "7", title: "API Development", duration: "06:40", thumbnail: "https://tse3.mm.bing.net/th?id=OVP.lHdo50d7MQSh5DQ4v7hWVgHgFo&pid=Api" },
-  { id: "8", title: "Cloud Computing", duration: "04:55", thumbnail: "https://tse3.mm.bing.net/th?id=OVP.lHdo50d7MQSh5DQ4v7hWVgHgFo&pid=Api" },
-  { id: "9", title: "Cybersecurity", duration: "11:30", thumbnail: "https://tse3.mm.bing.net/th?id=OVP.lHdo50d7MQSh5DQ4v7hWVgHgFo&pid=Api" },
-  { id: "10", title: "DevOps Practices", duration: "05:20", thumbnail: "https://tse3.mm.bing.net/th?id=OVP.lHdo50d7MQSh5DQ4v7hWVgHgFo&pid=Api" },
-  { id: "11", title: "Software Testing", duration: "03:30", thumbnail: "https://tse3.mm.bing.net/th?id=OVP.lHdo50d7MQSh5DQ4v7hWVgHgFo&pid=Api" },
-  { id: "12", title: "Frontend Development", duration: "07:45", thumbnail: "https://tse3.mm.bing.net/th?id=OVP.lHdo50d7MQSh5DQ4v7hWVgHgFo&pid=Api" },
-  { id: "13", title: "Backend Development", duration: "06:15", thumbnail: "https://tse3.mm.bing.net/th?id=OVP.lHdo50d7MQSh5DQ4v7hWVgHgFo&pid=Api" },
-]
-
-interface Video {
-  id: string
-  title: string
-  duration: string
-  thumbnail: string
-}
+import { Video } from "@/lib/model/Video"
+import { addVideo, getAllVideos, openDB } from "@/lib/indexedDb"
 
 export function BacktrackAppFullscreen() {
   const [currentView, setCurrentView] = useState("home")
@@ -49,6 +28,18 @@ export function BacktrackAppFullscreen() {
 }
 
 function HomePage({ video, onVideoSelect }: { video: Video | null, onVideoSelect: (video: Video) => void }) {
+  const [videos, setVideos] = useState<Video[]>([])
+
+  useEffect(() => {
+    loadVideos();
+  }, [])
+
+  const loadVideos = async () => {
+    await openDB();
+    const videos = await getAllVideos()
+    setVideos(videos)
+  }
+
   return (
     <div className="flex flex-col">
       <div className="flex-grow overflow-auto">
@@ -62,8 +53,8 @@ function HomePage({ video, onVideoSelect }: { video: Video | null, onVideoSelect
             <div className="space-y-4">
               {videos.map((video) => (
                 <div key={video.id} className="flex items-center space-x-4 cursor-pointer" onClick={() => onVideoSelect(video)}>
-                  <div className="relative w-24 h-16 bg-gray-200 rounded-md flex items-center justify-center">
-                    <Play className="h-8 w-8 text-gray-500" />
+                  <div className="relative w-24 h-12 md:w-32 md:h-16 bg-gray-200 rounded-md flex items-center justify-center">
+                    <Image src={video.thumbnail} alt={video.title} layout="fill" objectFit="contain" />
                   </div>
                   <div className="flex-1">
                     <p className="font-medium">{video.title}</p>
@@ -129,7 +120,7 @@ function Footer({ video }: { video: Video | null }) {
   return (
     <div className="border-t p-4 flex items-center justify-between bg-white fixed bottom-0 left-0 right-0">
       <div>
-        <p className="font-medium">{video?.title}</p>
+        <p className="font-medium">{video?.title || 'No video selected.'}</p>
       </div>
       <div className="flex space-x-2">
         <Button size="icon" variant="ghost">
@@ -146,6 +137,12 @@ function Footer({ video }: { video: Video | null }) {
   )
 }
 
+function extractVideoId(url: string): string | null {
+  const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+  const match = url.match(regex)
+  return match ? match[1] : null
+}
+
 function AddVideoDialog() {
   const [searchQuery, setSearchQuery] = useState("")
   const [videos, setVideos] = useState<Video[]>([])
@@ -155,11 +152,18 @@ function AddVideoDialog() {
     const response = await fetch(`/api/search?q=${searchQuery}`)
     const data = await response.json()
     setVideos(data.data.map((video: any) => ({
-      id: video.url,
+      id: extractVideoId(video.url),
       title: video.title,
       duration: video.duration,
-      thumbnail: video.images.large
+      thumbnail: video.images.large,
+      url: video.url
     })))
+  }
+
+  const handleAddVideo = async (video: Video) => {
+    await openDB();
+    await addVideo(video);
+    alert('success')
   }
 
   return (
@@ -195,7 +199,7 @@ function AddVideoDialog() {
                   <p className="text-xs text-gray-400">{video.duration}</p>
                 </div>
               </div>
-              <Button size="sm">Add</Button>
+              <Button size="sm" onClick={() => handleAddVideo(video)}>Add</Button>
             </div>
           ))}
         </div>
