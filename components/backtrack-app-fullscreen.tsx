@@ -76,6 +76,7 @@ function HomePage({ video, onVideoSelect }: { video: Video | null, onVideoSelect
 function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void }) {
   const ffmpegRef = useRef(new FFmpeg());
   const videoRef = useRef<HTMLVideoElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
   const load = async () => {
     const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
@@ -91,7 +92,7 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
   }, []);
 
   const getVideo = async () => {
-    if (!video || !videoRef.current) {
+    if (!video || !videoRef.current || !videoContainerRef.current) {
       return;
     }
 
@@ -99,7 +100,55 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
 
     if (existingBuffer) {
       const blob = new Blob([existingBuffer.data], { type: 'video/mp4' });
-      videoRef.current.src = URL.createObjectURL(blob);
+      const videoElement = document.createElement('video');
+      videoElement.controls = true;
+      videoElement.playsInline = true;
+
+      const sourceElement = document.createElement('source');
+      sourceElement.src = URL.createObjectURL(blob);
+      sourceElement.type = 'video/webm';
+
+      videoElement.appendChild(sourceElement);
+
+      //load start
+      videoElement.addEventListener('loadstart', (event: any) => {
+        alert('loadstart')
+        console.log(event)
+      });
+
+      videoElement.addEventListener('canplay', () => {
+        alert('canplay')
+      });
+
+      videoElement.addEventListener('loadeddata', () => {
+        alert('loadeddata')
+      });
+
+      videoElement.addEventListener('loadedmetadata', () => {
+        alert('loadedmetadata')
+      });
+
+      videoElement.addEventListener('error', ( event: any ) => {
+        alert('error')
+      });
+
+      //stalled
+      videoElement.addEventListener('stalled', () => {
+        alert('stalled')
+      });
+
+      //suspend
+      videoElement.addEventListener('suspend', () => {
+        alert('suspend')
+      });
+
+
+
+
+      
+
+      videoContainerRef.current.appendChild(videoElement);
+      
       alert('Loaded existing video');
       return;
     }
@@ -144,7 +193,11 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
     const data = (await ffmpeg.readFile('video.mp4')) as any;
     await saveVideoArrayBuffer(video.id, data.buffer);
     const blob = new Blob([data.buffer], { type: 'video/mp4' });
-    videoRef.current.src = URL.createObjectURL(blob);
+
+    const sourceElement = document.createElement('source');
+    sourceElement.src = URL.createObjectURL(blob);
+    sourceElement.type = 'video/mp4';
+    videoRef.current.appendChild(sourceElement);
     alert('Created and saved new video');
   };
 
@@ -162,10 +215,13 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
               Back
             </Button>
             <div className="md:w-1/2 mx-auto">
-              <video
+              <div ref={videoContainerRef}></div>
+              <audio
                 className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"
                 controls
                 ref={videoRef}
+                playsInline
+                autoPlay
               />
               <h2 className="text-xl font-semibold mb-2">{video?.title}</h2>
               <div className="flex justify-between items-center mb-2">
