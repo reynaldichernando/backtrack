@@ -1,13 +1,15 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { PlusCircle, Play, SkipBack, SkipForward, X, ChevronDown, Search } from "lucide-react"
 import Image from "next/image"
 import { Video } from "@/lib/model/Video"
-import { addVideo, getAllVideos, openDB } from "@/lib/indexedDb"
+import { addVideo, getAllVideos, getVideoArrayBuffer, openDB, saveVideoArrayBuffer } from "@/lib/indexedDb"
+import { FFmpeg } from "@ffmpeg/ffmpeg"
+import { toBlobURL } from "@ffmpeg/util"
 
 export function BacktrackAppFullscreen() {
   const [currentView, setCurrentView] = useState("home")
@@ -72,6 +74,80 @@ function HomePage({ video, onVideoSelect }: { video: Video | null, onVideoSelect
 }
 
 function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void }) {
+  const ffmpegRef = useRef(new FFmpeg());
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const load = async () => {
+    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+    const ffmpeg = ffmpegRef.current;
+    await ffmpeg.load({
+      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm')
+    });
+  };
+
+  useEffect(() => {
+    getVideo();
+  }, []);
+
+  const getVideo = async () => {
+    if (!video || !videoRef.current) {
+      return;
+    }
+
+    const existingBuffer: any = await getVideoArrayBuffer(video.id);
+
+    if (existingBuffer) {
+      const blob = new Blob([existingBuffer.data], { type: 'video/mp4' });
+      videoRef.current.src = URL.createObjectURL(blob);
+      alert('Loaded existing video');
+      return;
+    }
+
+    await load();
+
+    const videoBuffer = await (await fetch(`/api/download`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id: video.id,
+        type: 'video',
+        start: 0,
+      })
+    })).arrayBuffer();
+
+    const audioBuffer = await (await fetch(`/api/download`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id: video.id,
+        type: 'audio',
+        start: 0,
+      })
+    })).arrayBuffer();
+
+    const ffmpeg = ffmpegRef.current;
+    await ffmpeg.writeFile('video.webm', new Uint8Array(videoBuffer));
+    await ffmpeg.writeFile('audio.webm', new Uint8Array(audioBuffer));
+    await ffmpeg.exec([
+      "-i", "video.webm",
+      "-i", "audio.webm",
+      "-c:v", "copy",
+      "-c:a", "aac",
+      "video.mp4"
+    ]);
+
+    const data = (await ffmpeg.readFile('video.mp4')) as any;
+    await saveVideoArrayBuffer(video.id, data.buffer);
+    const blob = new Blob([data.buffer], { type: 'video/mp4' });
+    videoRef.current.src = URL.createObjectURL(blob);
+    alert('Created and saved new video');
+  };
+
   return (
     <div className="flex flex-col">
       <div className="flex-grow overflow-auto">
@@ -86,9 +162,11 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
               Back
             </Button>
             <div className="md:w-1/2 mx-auto">
-              <div className="aspect-video bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                <Play className="h-16 w-16 text-gray-500" />
-              </div>
+              <video
+                className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"
+                controls
+                ref={videoRef}
+              />
               <h2 className="text-xl font-semibold mb-2">{video?.title}</h2>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-500">00:00</span>
@@ -113,7 +191,7 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function Footer({ video }: { video: Video | null }) {
@@ -161,7 +239,6 @@ function AddVideoDialog() {
   }
 
   const handleAddVideo = async (video: Video) => {
-    await openDB();
     await addVideo(video);
     alert('success')
   }
