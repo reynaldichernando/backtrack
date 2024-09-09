@@ -5,7 +5,10 @@ const dbVersion = 1;
 
 let db: IDBDatabase;
 
-export const openDB = async () => {
+const videoStoreName = 'video';
+const videoBinaryStoreName = 'video_binary';
+
+const openDB = async () => {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(dbName, dbVersion);
 
@@ -21,8 +24,8 @@ export const openDB = async () => {
 
     request.onupgradeneeded = (event) => {
       db = (event.target as IDBOpenDBRequest).result;
-      db.createObjectStore('videos', { keyPath: 'id' });
-      db.createObjectStore('videoFiles', { keyPath: 'id' });
+      db.createObjectStore(videoStoreName, { keyPath: 'id' });
+      db.createObjectStore(videoBinaryStoreName, { keyPath: 'id' });
     };
   });
 };
@@ -30,8 +33,8 @@ export const openDB = async () => {
 export const addVideo = async (video: Video) => {
   await openDB();
   return new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction(['videos'], 'readwrite');
-    const objectStore = transaction.objectStore('videos');
+    const transaction = db.transaction([videoStoreName], 'readwrite');
+    const objectStore = transaction.objectStore(videoStoreName);
     const request = objectStore.add(video);
 
     request.onsuccess = function (event) {
@@ -47,8 +50,8 @@ export const addVideo = async (video: Video) => {
 export const getAllVideos = async () => {
   await openDB();
   return new Promise<Video[]>((resolve, reject) => {
-    const transaction = db.transaction(['videos'], 'readonly');
-    const objectStore = transaction.objectStore('videos');
+    const transaction = db.transaction([videoStoreName], 'readonly');
+    const objectStore = transaction.objectStore(videoStoreName);
     const request = objectStore.openCursor();
 
     const videoList: Video[] = [];
@@ -71,12 +74,12 @@ export const getAllVideos = async () => {
   });
 };
 
-export const saveVideoArrayBuffer = async (id: string, buffer: ArrayBuffer) => {
+export const saveVideoBinary = async (id: string, data: ArrayBuffer) => {
   await openDB();
   return new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction(['videoFiles'], 'readwrite');
-    const objectStore = transaction.objectStore('videoFiles');
-    const request = objectStore.put({ id, data: buffer });
+    const transaction = db.transaction([videoBinaryStoreName], 'readwrite');    
+    const objectStore = transaction.objectStore(videoBinaryStoreName);
+    const request = objectStore.put({ id, data });
 
     request.onsuccess = function (event) {
       resolve();
@@ -88,11 +91,11 @@ export const saveVideoArrayBuffer = async (id: string, buffer: ArrayBuffer) => {
   });
 };
 
-export const getVideoArrayBuffer = async (id: string) => {
+export const getVideoBinary = async (id: string) => {
   await openDB();
   return new Promise<ArrayBuffer>((resolve, reject) => {
-    const transaction = db.transaction(['videoFiles'], 'readonly');
-    const objectStore = transaction.objectStore('videoFiles');
+    const transaction = db.transaction([videoBinaryStoreName], 'readonly');
+    const objectStore = transaction.objectStore(videoBinaryStoreName);
     const request = objectStore.get(id);
 
     request.onsuccess = function (event) {

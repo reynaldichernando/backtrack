@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { PlusCircle, Play, SkipBack, SkipForward, X, ChevronDown, Search } from "lucide-react"
+import { PlusCircle, Play, ChevronDown, Search } from "lucide-react"
 import Image from "next/image"
 import { Video } from "@/lib/model/Video"
-import { addVideo, getAllVideos, getVideoArrayBuffer, openDB, saveVideoArrayBuffer } from "@/lib/indexedDb"
+import { addVideo, getAllVideos, getVideoBinary, saveVideoBinary } from "@/lib/indexedDb"
 import { FFmpeg } from "@ffmpeg/ffmpeg"
 import { toBlobURL } from "@ffmpeg/util"
 import { extractVideoId } from "@/lib/utils"
@@ -38,7 +38,6 @@ function HomePage({ video, onVideoSelect }: { video: Video | null, onVideoSelect
   }, [])
 
   const loadVideos = async () => {
-    await openDB();
     const videos = await getAllVideos()
     setVideos(videos)
   }
@@ -96,7 +95,7 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
       return;
     }
 
-    const existingBuffer: any = await getVideoArrayBuffer(video.id);
+    const existingBuffer: any = await getVideoBinary(video.id);
 
     if (existingBuffer) {
       const blob = new Blob([existingBuffer.data], { type: 'video/webm' });
@@ -112,7 +111,6 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
       body: JSON.stringify({
         id: video.id,
         type: 'video',
-        start: 0,
       })
     })).arrayBuffer();
 
@@ -121,7 +119,6 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
       body: JSON.stringify({
         id: video.id,
         type: 'audio',
-        start: 0,
       })
     })).arrayBuffer();
 
@@ -136,7 +133,7 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
     ]);
 
     const data = (await ffmpeg.readFile('output.webm')) as any;
-    await saveVideoArrayBuffer(video.id, data.buffer);
+    await saveVideoBinary(video.id, data.buffer);
     const blob = new Blob([data.buffer], { type: 'video/webm' });
     const url = URL.createObjectURL(blob);
     setVideoSrc(url);

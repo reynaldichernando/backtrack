@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   }
 
   // default resolution to 360p
-  resolution = resolution || 360;
+  resolution = resolution ?? 360;
 
   // refetch video info since format url is throttled based on request's IP address
   const videoInfo = await fetchVideoInfo(id);
@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
 
   const format = formats[0];
 
-  if (!end) {
-    end = format.filesize;
-  }
+  start = start ?? 0;
+  end = end ?? format.filesize;
+  
   let range = `bytes=${start}-${end - 1}`;
 
   const res = await fetch(format.url, {
