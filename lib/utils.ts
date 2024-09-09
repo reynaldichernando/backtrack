@@ -10,3 +10,10 @@ export function extractVideoId(url: string): string | null {
   const match = url.match(regex)
   return match ? match[1] : null
 }
+
+export function generateThumbnailUrl(videoId: string | null): string {
+  if (!videoId) {
+    return '';
+  }
+  return `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`;
+}

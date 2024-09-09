@@ -10,5 +10,5 @@ export async function GET(request: NextRequest) {
 
   const videoInfo = await fetchVideoInfo(id);
 
-  return Response.json({formats: videoInfo.formats});
+  return Response.json({ data: videoInfo });
 }

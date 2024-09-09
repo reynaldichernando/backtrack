@@ -10,7 +10,7 @@ import { Video } from "@/lib/model/Video"
 import { addVideo, getAllVideos, getVideoBinary, saveVideoBinary } from "@/lib/indexedDb"
 import { FFmpeg } from "@ffmpeg/ffmpeg"
 import { toBlobURL } from "@ffmpeg/util"
-import { extractVideoId } from "@/lib/utils"
+import { extractVideoId, generateThumbnailUrl } from "@/lib/utils"
 
 export function BacktrackAppFullscreen() {
   const [currentView, setCurrentView] = useState("home")
@@ -60,7 +60,7 @@ function HomePage({ video, onVideoSelect }: { video: Video | null, onVideoSelect
                   </div>
                   <div className="flex-1">
                     <p className="font-medium">{video.title}</p>
-                    <p className="text-xs text-gray-400">{video.duration}</p>
+                    <p className="text-sm text-gray-500">{video.author}</p>
                   </div>
                 </div>
               ))}
@@ -162,6 +162,7 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
                 <source src={videoSrc} type="video/webm" />
               </video>
               <h2 className="text-xl font-semibold mb-2">{video?.title}</h2>
+              <p className="text-gray-500 mb-4">{video?.author}</p>
             </div>
           </div>
         </div>
@@ -175,6 +176,7 @@ function Footer({ video }: { video: Video | null }) {
     <div className="border-t p-4 flex items-center justify-between bg-white fixed bottom-0 left-0 right-0">
       <div>
         <p className="font-medium">{video?.title || 'No video selected.'}</p>
+        <p className="text-sm text-gray-500">{video?.author}</p>
       </div>
       <div className="flex space-x-2">
         {video && (
@@ -195,18 +197,20 @@ function AddVideoDialog() {
     e.preventDefault()
     const response = await fetch(`/api/search?q=${searchQuery}`)
     const data = await response.json()
-    setVideos(data.data.map((video: any) => ({
-      id: extractVideoId(video.url),
-      title: video.title,
-      duration: video.duration,
-      thumbnail: video.images.large,
-      url: video.url
-    })))
+    setVideos(data.data.map((searchResult: any) => {
+      const videoId = extractVideoId(searchResult.url);
+      return {
+        id: videoId,
+        title: searchResult.title,
+        thumbnail: generateThumbnailUrl(videoId),
+      }
+    }))
   }
 
   const handleAddVideo = async (video: Video) => {
+    const videoInfo = await (await fetch(`/api/info?id=${video.id}`)).json()
+    video.author = videoInfo.data.uploader
     await addVideo(video);
-
   }
 
   return (
@@ -239,7 +243,6 @@ function AddVideoDialog() {
                 </div>
                 <div>
                   <p className="text-sm truncate w-48 md:w-60">{video.title}</p>
-                  <p className="text-xs text-gray-400">{video.duration}</p>
                 </div>
               </div>
               <Button size="sm" onClick={() => handleAddVideo(video)}>Add</Button>
