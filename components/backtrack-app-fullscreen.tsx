@@ -17,20 +17,19 @@ export function BacktrackAppFullscreen() {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null)
 
   return (
-    <div className=" bg-white">
-      {currentView === "home" ? (
-        <HomePage video={selectedVideo} onVideoSelect={(video) => {
-          setSelectedVideo(video)
-          setCurrentView("detail")
-        }} />
-      ) : (
-        <DetailPage video={selectedVideo} onBack={() => setCurrentView("home")} />
-      )}
+    <div className="bg-white">
+      <HomePage video={selectedVideo} onVideoSelect={(video) => {
+        setSelectedVideo(video)
+        setCurrentView("detail")
+      }}
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+      />
     </div>
   )
 }
 
-function HomePage({ video, onVideoSelect }: { video: Video | null, onVideoSelect: (video: Video) => void }) {
+function HomePage({ video, onVideoSelect, currentView, setCurrentView }: { video: Video | null, onVideoSelect: (video: Video) => void, currentView: string, setCurrentView: (view: string) => void }) {
   const [videos, setVideos] = useState<Video[]>([])
 
   useEffect(() => {
@@ -46,34 +45,37 @@ function HomePage({ video, onVideoSelect }: { video: Video | null, onVideoSelect
     <div className="flex flex-col">
       <div className="flex-grow overflow-auto">
         <div className="md:flex">
-          <div className="md:w-1/4 p-4 space-y-4 md:overflow-auto">
+          <div className="md:w-1/4 p-4 space-y-4 md:overflow-auto md:border-r">
             <h1 className="text-2xl font-bold">BackTrack</h1>
             <AddVideoDialog />
           </div>
-          <div className="md:w-3/4 md:border-l p-4 md:overflow-auto pb-28 md:h-screen">
-            <h2 className="text-xl font-semibold mb-4">My Videos</h2>
-            <div className="space-y-4">
-              {videos.map((video) => (
-                <div key={video.id} className="flex items-center space-x-4 cursor-pointer" onClick={() => onVideoSelect(video)}>
-                  <div className="relative w-24 h-12 md:w-32 md:h-16 bg-gray-200 rounded-md flex items-center justify-center">
-                    <Image src={video.thumbnail} alt={video.title} layout="fill" objectFit="contain" />
+          <div className="md:w-3/4 p-4 md:overflow-auto pb-28 md:h-screen">
+            <div className="z-0">
+              <h2 className="text-xl font-semibold mb-4">My Videos</h2>
+              <div className="space-y-4">
+                {videos.map((video) => (
+                  <div key={video.id} className="flex items-center space-x-4 cursor-pointer" onClick={() => onVideoSelect(video)}>
+                    <div className="relative w-24 h-12 md:w-32 md:h-16 bg-gray-200 rounded-md flex items-center justify-center">
+                      <Image src={video.thumbnail} alt={video.title} layout="fill" objectFit="contain" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{video.title}</p>
+                      <p className="text-sm text-gray-500">{video.author}</p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{video.title}</p>
-                    <p className="text-sm text-gray-500">{video.author}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
+            <Player video={video} currentView={currentView} setCurrentView={setCurrentView} />
           </div>
         </div>
       </div>
-      <Footer video={video} />
+      <Footer video={video} currentView={currentView} setCurrentView={setCurrentView} />
     </div>
   )
 }
 
-function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void }) {
+function Player({ video, currentView, setCurrentView }: { video: Video | null, currentView: string, setCurrentView: (view: string) => void }) {
   const ffmpegRef = useRef(new FFmpeg());
   const [videoSrc, setVideoSrc] = useState<string>();
 
@@ -87,8 +89,11 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
   };
 
   useEffect(() => {
+    if (!video) {
+      return;
+    }
     getVideo();
-  }, []);
+  }, [video]);
 
   const getVideo = async () => {
     if (!video) {
@@ -140,43 +145,34 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
   };
 
   return (
-    <div className="flex flex-col">
-      <div className="flex-grow overflow-auto">
-        <div className="md:flex">
-          <div className="hidden md:block md:w-1/4 p-4 space-y-4 md:overflow-auto">
-            <h1 className="text-2xl font-bold">BackTrack</h1>
-            <AddVideoDialog />
-          </div>
-          <div className="md:w-3/4 md:border-l p-4 md:overflow-auto md:h-screen">
-            <Button variant="ghost" onClick={onBack} className="mb-4">
-              <ChevronDown className="m-2 h-4 w-4" />
-            </Button>
-            <div className="md:w-2/3 mx-auto">
-              <video
-                className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"
-                controls
-                playsInline
-                autoPlay
-                src={videoSrc}
-              >
-                <source src={videoSrc} type="video/webm" />
-              </video>
-              <h2 className="text-xl font-semibold mb-2">{video?.title}</h2>
-              <p className="text-gray-500 mb-4">{video?.author}</p>
-            </div>
-          </div>
+    <div className={`flex flex-col fixed top-0 right-0 w-full md:w-3/4 md:h-screen bg-white transition duration-300 ease-out ${currentView == "detail" ? "transform translate-y-0 opacity-100" : "transform translate-y-full opacity-0"}`}>
+      <div className="p-4">
+        <Button variant="ghost" className="mb-4" onClick={() => setCurrentView("home")}>
+          <ChevronDown className="m-2 h-4 w-4" />
+        </Button>
+        <div className="md:w-2/3 mx-auto">
+          <video
+            className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"
+            playsInline
+            autoPlay
+            src={videoSrc}
+          >
+            <source src={videoSrc} type="video/webm" />
+          </video>
+          <h2 className="text-xl font-semibold mb-2">{video?.title}</h2>
+          <p className="text-gray-500 mb-4">{video?.author}</p>
         </div>
       </div>
     </div>
   );
 }
 
-function Footer({ video }: { video: Video | null }) {
+function Footer({ video, currentView, setCurrentView }: { video: Video | null, currentView: string, setCurrentView: (view: string) => void }) {
   return (
-    <div className="border-t p-4 flex items-center justify-between bg-white fixed bottom-0 left-0 right-0">
-      <div>
+    <div className={`border-t p-4 flex items-center justify-between bg-white fixed bottom-0 left-0 right-0 transition-transform duration-300 ease-out ${currentView == "detail" ? "transform translate-y-full" : "transform translate-y-0"}`}>
+      <div onClick={() => setCurrentView("detail")}>
         <p className="font-medium">{video?.title || 'No video selected.'}</p>
-        <p className="text-sm text-gray-500">{video?.author}</p>
+        <p className="text-sm text-gray-500">{video?.author || '-'}</p>
       </div>
       <div className="flex space-x-2">
         {video && (
