@@ -10,6 +10,7 @@ import { Video } from "@/lib/model/Video"
 import { addVideo, getAllVideos, getVideoArrayBuffer, openDB, saveVideoArrayBuffer } from "@/lib/indexedDb"
 import { FFmpeg } from "@ffmpeg/ffmpeg"
 import { toBlobURL } from "@ffmpeg/util"
+import { extractVideoId } from "@/lib/utils"
 
 export function BacktrackAppFullscreen() {
   const [currentView, setCurrentView] = useState("home")
@@ -75,8 +76,7 @@ function HomePage({ video, onVideoSelect }: { video: Video | null, onVideoSelect
 
 function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void }) {
   const ffmpegRef = useRef(new FFmpeg());
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const [videoSrc, setVideoSrc] = useState<string>();
 
   const load = async () => {
     const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
@@ -92,64 +92,16 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
   }, []);
 
   const getVideo = async () => {
-    if (!video || !videoRef.current || !videoContainerRef.current) {
+    if (!video) {
       return;
     }
 
     const existingBuffer: any = await getVideoArrayBuffer(video.id);
 
     if (existingBuffer) {
-      const blob = new Blob([existingBuffer.data], { type: 'video/mp4' });
-      const videoElement = document.createElement('video');
-      videoElement.controls = true;
-      videoElement.playsInline = true;
-
-      const sourceElement = document.createElement('source');
-      sourceElement.src = URL.createObjectURL(blob);
-      sourceElement.type = 'video/webm';
-
-      videoElement.appendChild(sourceElement);
-
-      //load start
-      videoElement.addEventListener('loadstart', (event: any) => {
-        alert('loadstart')
-        console.log(event)
-      });
-
-      videoElement.addEventListener('canplay', () => {
-        alert('canplay')
-      });
-
-      videoElement.addEventListener('loadeddata', () => {
-        alert('loadeddata')
-      });
-
-      videoElement.addEventListener('loadedmetadata', () => {
-        alert('loadedmetadata')
-      });
-
-      videoElement.addEventListener('error', ( event: any ) => {
-        alert('error')
-      });
-
-      //stalled
-      videoElement.addEventListener('stalled', () => {
-        alert('stalled')
-      });
-
-      //suspend
-      videoElement.addEventListener('suspend', () => {
-        alert('suspend')
-      });
-
-
-
-
-      
-
-      videoContainerRef.current.appendChild(videoElement);
-      
-      alert('Loaded existing video');
+      const blob = new Blob([existingBuffer.data], { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      setVideoSrc(url);
       return;
     }
 
@@ -157,9 +109,6 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
 
     const videoBuffer = await (await fetch(`/api/download`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
         id: video.id,
         type: 'video',
@@ -169,9 +118,6 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
 
     const audioBuffer = await (await fetch(`/api/download`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
         id: video.id,
         type: 'audio',
@@ -185,20 +131,15 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
     await ffmpeg.exec([
       "-i", "video.webm",
       "-i", "audio.webm",
-      "-c:v", "copy",
-      "-c:a", "aac",
-      "video.mp4"
+      "-c", "copy",
+      "output.webm"
     ]);
 
-    const data = (await ffmpeg.readFile('video.mp4')) as any;
+    const data = (await ffmpeg.readFile('output.webm')) as any;
     await saveVideoArrayBuffer(video.id, data.buffer);
-    const blob = new Blob([data.buffer], { type: 'video/mp4' });
-
-    const sourceElement = document.createElement('source');
-    sourceElement.src = URL.createObjectURL(blob);
-    sourceElement.type = 'video/mp4';
-    videoRef.current.appendChild(sourceElement);
-    alert('Created and saved new video');
+    const blob = new Blob([data.buffer], { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    setVideoSrc(url);
   };
 
   return (
@@ -211,37 +152,19 @@ function DetailPage({ video, onBack }: { video: Video | null, onBack: () => void
           </div>
           <div className="md:w-3/4 md:border-l p-4 md:overflow-auto md:h-screen">
             <Button variant="ghost" onClick={onBack} className="mb-4">
-              <ChevronDown className="mr-2 h-4 w-4" />
-              Back
+              <ChevronDown className="m-2 h-4 w-4" />
             </Button>
-            <div className="md:w-1/2 mx-auto">
-              <div ref={videoContainerRef}></div>
-              <audio
+            <div className="md:w-2/3 mx-auto">
+              <video
                 className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"
                 controls
-                ref={videoRef}
                 playsInline
                 autoPlay
-              />
+                src={videoSrc}
+              >
+                <source src={videoSrc} type="video/webm" />
+              </video>
               <h2 className="text-xl font-semibold mb-2">{video?.title}</h2>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-500">00:00</span>
-                <span className="text-sm text-gray-500">{video?.duration}</span>
-              </div>
-              <div className="h-1 bg-gray-200 rounded-full mb-4">
-                <div className="h-1 bg-blue-500 rounded-full w-1/3"></div>
-              </div>
-              <div className="flex justify-center space-x-4">
-                <Button size="icon" variant="ghost">
-                  <SkipBack className="h-6 w-6" />
-                </Button>
-                <Button size="icon" variant="ghost">
-                  <Play className="h-6 w-6" />
-                </Button>
-                <Button size="icon" variant="ghost">
-                  <SkipForward className="h-6 w-6" />
-                </Button>
-              </div>
             </div>
           </div>
         </div>
@@ -257,24 +180,14 @@ function Footer({ video }: { video: Video | null }) {
         <p className="font-medium">{video?.title || 'No video selected.'}</p>
       </div>
       <div className="flex space-x-2">
-        <Button size="icon" variant="ghost">
-          <SkipBack className="h-6 w-6" />
-        </Button>
-        <Button size="icon" variant="ghost">
-          <Play className="h-6 w-6" />
-        </Button>
-        <Button size="icon" variant="ghost">
-          <SkipForward className="h-6 w-6" />
-        </Button>
+        {video && (
+          <Button size="icon" variant="ghost">
+            <Play className="h-6 w-6" />
+          </Button>
+        )}
       </div>
     </div>
   )
-}
-
-function extractVideoId(url: string): string | null {
-  const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-  const match = url.match(regex)
-  return match ? match[1] : null
 }
 
 function AddVideoDialog() {
@@ -296,7 +209,7 @@ function AddVideoDialog() {
 
   const handleAddVideo = async (video: Video) => {
     await addVideo(video);
-    alert('success')
+
   }
 
   return (
