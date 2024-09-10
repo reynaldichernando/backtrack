@@ -28,7 +28,7 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
     }, [video]);
   
     const getVideo = async () => {
-      if (!video || !ffmpegRef.current) {
+      if (!video) {
         return;
       }
   
@@ -42,6 +42,10 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
       }
   
       await load();
+
+      if (!ffmpegRef.current) {
+        return;
+      }
   
       const videoBuffer = await (await fetch(`/api/download`, {
         method: 'POST',

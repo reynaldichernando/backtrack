@@ -9,6 +9,8 @@ import { Button } from "./ui/button";
 import { PlusCircle, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Input } from "./ui/input";
+import { search } from "@/lib/search";
+import { fetchVideoInfo } from "@/lib/youtube";
 
 export default function HomePage({ video, onVideoSelect, currentView, setCurrentView }: { video: Video | null, onVideoSelect: (video: Video) => void, currentView: string, setCurrentView: (view: string) => void }) {
   const [videos, setVideos] = useState<Video[]>([])
@@ -62,16 +64,15 @@ function AddVideoDialog() {
 
   const handleSearch = async (e: any) => {
     e.preventDefault()
-    const response = await fetch(`/api/search?q=${searchQuery}`)
-    const data = await response.json()
-    setVideos(data.data.map((searchResult: any) => {
+    const res = await search({ query: `${searchQuery} site:youtube.com` }, "video");
+    setVideos(res.results.map((searchResult: any) => {
       const videoId = extractVideoId(searchResult.url);
       return {
         id: videoId,
         title: searchResult.title,
-        thumbnail: generateThumbnailUrl(videoId),
-      }
-    }))
+        thumbnail: searchResult.images.large
+      } as Video;
+    }));
   }
 
   const handleAddVideo = async (video: Video) => {
