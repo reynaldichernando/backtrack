@@ -39,7 +39,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   return (
     <ToastContext.Provider value={contextValue}>
       {children}
-      <div className="fixed bottom-4 right-4">
+      <div className="fixed top-4 right-4 z-50">
         <Transition
           show={toasts.length > 0}
           enter="transition-opacity duration-300"
@@ -53,7 +53,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
             {toasts.map((toast) => (
               <div
                 key={toast.id}
-                className={`p-4 rounded shadow-xl ${toast.type === 'success'
+                className={`p-4 bg-white rounded shadow-xl ${toast.type === 'success'
                     ? 'border-l-4 border-green-500'
                     : toast.type === 'error'
                       ? ' border-l-4 border-red-500'

@@ -6,10 +6,12 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { ChevronDown } from "lucide-react";
 import { downloadMedia } from "@/lib/youtube";
+import { useToast } from "./useToast";
 
 export default function Player({ video, currentView, setCurrentView }: { video: Video | null, currentView: string, setCurrentView: (view: string) => void }) {
     const ffmpegRef = useRef<FFmpeg>();
     const [videoSrc, setVideoSrc] = useState<string>();
+    const { addToast } = useToast();
   
     const load = async () => {
       const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
@@ -32,6 +34,8 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
       if (!video) {
         return;
       }
+
+      setVideoSrc('');
   
       const existingBuffer: any = await getVideoBinary(video.id);
   
@@ -39,8 +43,11 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
         const blob = new Blob([existingBuffer.data], { type: 'video/webm' });
         const url = URL.createObjectURL(blob);
         setVideoSrc(url);
+        addToast('Video loaded from cache');
         return;
       }
+
+      addToast('Downloading video...');
   
       await load();
 
@@ -70,6 +77,8 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
       const blob = new Blob([data.buffer], { type: 'video/webm' });
       const url = URL.createObjectURL(blob);
       setVideoSrc(url);
+
+      addToast('Video saved successfully');
     };
   
     return (
