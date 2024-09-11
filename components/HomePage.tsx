@@ -27,7 +27,10 @@ export default function HomePage({ video, onVideoSelect, currentView, setCurrent
     <div className="flex flex-col h-screen">
       <div className={`md:flex ${currentView == "detail" ? "overflow-hidden" : ""}`}>
         <div className="md:w-1/4 p-4 space-y-4 md:overflow-auto md:border-r">
-          <h1 className="text-2xl font-bold">BackTrack</h1>
+          <div className="flex items-center space-x-2">
+            <img src="./144.png" alt="BackTrack Logo" className="w-8 h-8 rounded" />
+            <h1 className="text-2xl font-bold">BackTrack</h1>
+          </div>
           <AddVideoDialog loadVideos={loadVideos} />
         </div>
         <div className="md:w-3/4 p-4 md:overflow-auto pb-28 md:h-screen">
