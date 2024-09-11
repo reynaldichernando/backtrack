@@ -40,3 +40,6 @@ public/sw*
 public/swe-worker*
 
 certificates
+
+#firebase
+.firebase
