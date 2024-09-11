@@ -130,7 +130,7 @@ export async function downloadMedia(id: string, type: string, start: number | nu
   start = start ?? 0;
   end = end ?? format.filesize;
   
-  let range = `bytes=${start}-${end - 1}`;
+  const range = `bytes=${start}-${end - 1}`;
 
   const res = await fetch(`https://app.backtrackhq.workers.dev/?${format.url}`, {
     headers: {

@@ -2,7 +2,7 @@ type SearchType = 'regular' | 'image' | 'video' | 'news' | 'map';
 type SearchData = { query: string, next?: string };
 
 interface SearchResult {
-    results: Array<Object>;
+    results: Array<object>;
     hasNext?: boolean;
     next?: string | number;
 }

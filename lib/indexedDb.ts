@@ -37,7 +37,7 @@ export const addVideo = async (video: Video) => {
     const objectStore = transaction.objectStore(videoStoreName);
     const request = objectStore.add(video);
 
-    request.onsuccess = function (event) {
+    request.onsuccess = function () {
       resolve();
     };
 
@@ -81,7 +81,7 @@ export const saveVideoBinary = async (id: string, data: ArrayBuffer) => {
     const objectStore = transaction.objectStore(videoBinaryStoreName);
     const request = objectStore.put({ id, data });
 
-    request.onsuccess = function (event) {
+    request.onsuccess = function () {
       resolve();
     };
 
@@ -115,7 +115,7 @@ export const saveMediaBinary = async (id: string, video: ArrayBuffer, audio: Arr
     const objectStore = transaction.objectStore(videoBinaryStoreName);
     const request = objectStore.put({ id, video, audio });
 
-    request.onsuccess = function (event) {
+    request.onsuccess = function () {
       resolve();
     };
 

@@ -62,7 +62,7 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
     }
 
     if (!navigator.mediaSession) { return; }
-    let trackPlaying = {
+    const trackPlaying = {
       title: video.title,
       artist: video.author,
       artwork: [{

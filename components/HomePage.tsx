@@ -9,7 +9,6 @@ import { PlusCircle, Search } from "lucide-react";
 import { Dialog } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { search } from "@/lib/search";
-import { Description, DialogTitle } from "@headlessui/react";
 import { useToast } from "./useToast";
 
 export default function HomePage({ video, onVideoSelect, currentView, setCurrentView }: { video: Video | null, onVideoSelect: (video: Video) => void, currentView: string, setCurrentView: (view: string) => void }) {
@@ -62,7 +61,7 @@ function AddVideoDialog({ loadVideos }: { loadVideos: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const { addToast } = useToast();
 
-  const handleSearch = async (e: any) => {
+  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const res = await search({ query: `${searchQuery} site:youtube.com` }, "video");
     setVideos(res.results.map((searchResult: any) => {
