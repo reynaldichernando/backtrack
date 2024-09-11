@@ -73,8 +73,8 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
     };
   
     return (
-      <div className={`flex flex-col fixed top-0 right-0 w-full md:w-3/4 md:h-screen bg-white transition duration-300 ease-out ${currentView == "detail" ? "transform translate-y-0 opacity-100" : "transform translate-y-full opacity-0"}`}>
-        <div className="p-4">
+      <div className={`flex flex-col fixed top-0 right-0 w-full md:w-3/4 h-screen bg-white transition duration-300 ease-out ${currentView == "detail" ? "transform translate-y-0 opacity-100" : "transform translate-y-full opacity-0"}`}>
+        <div className="p-4 overflow-auto">
           <Button variant="ghost" className="mb-4" onClick={() => setCurrentView("home")}>
             <ChevronDown className="m-2 h-4 w-4" />
           </Button>
@@ -83,6 +83,7 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
               className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"
               playsInline
               autoPlay
+              controls
               src={videoSrc}
             >
               <source src={videoSrc} type="video/webm" />

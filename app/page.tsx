@@ -4,7 +4,7 @@ import HomePage from "@/components/HomePage";
 import { Video } from "@/lib/model/Video"
 import { useState } from "react";
 
-export default function BacktrackAppFullscreen() {
+export default function BacktrackApp() {
   const [currentView, setCurrentView] = useState("home")
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null)
 
