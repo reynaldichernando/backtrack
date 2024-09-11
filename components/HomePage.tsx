@@ -10,6 +10,7 @@ import { Dialog } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { search } from "@/lib/search";
 import { Description, DialogTitle } from "@headlessui/react";
+import { useToast } from "./useToast";
 
 export default function HomePage({ video, onVideoSelect, currentView, setCurrentView }: { video: Video | null, onVideoSelect: (video: Video) => void, currentView: string, setCurrentView: (view: string) => void }) {
   const [videos, setVideos] = useState<Video[]>([])
@@ -59,6 +60,7 @@ function AddVideoDialog({ loadVideos }: { loadVideos: () => Promise<void> }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [videos, setVideos] = useState<Video[]>([])
   const [open, setOpen] = useState(false);
+  const { addToast } = useToast();
 
   const handleSearch = async (e: any) => {
     e.preventDefault()
@@ -85,6 +87,7 @@ function AddVideoDialog({ loadVideos }: { loadVideos: () => Promise<void> }) {
     });
 
     setOpen(false);
+    addToast('Video added successfully');
     await loadVideos();
   }
   
