@@ -79,7 +79,7 @@ function AddVideoDialog({ loadVideos }: { loadVideos: () => Promise<void> }) {
   }
 
   const handleAddVideo = async (video: Video) => {
-    let thumbnailResponse = await fetch(`https://app.backtrackhq.workers.dev/?${generateThumbnailUrl(video.id)}`);
+    const thumbnailResponse = await fetch(`https://app.backtrackhq.workers.dev/?${generateThumbnailUrl(video.id)}`);
     const thumbnailBuffer = thumbnailResponse.status === 404 ? await (await fetch(video.thumbnail)).arrayBuffer() : await thumbnailResponse.arrayBuffer();
     const thumbnailBase64 = Buffer.from(thumbnailBuffer).toString('base64');
 
