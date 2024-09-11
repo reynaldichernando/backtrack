@@ -10,6 +10,7 @@ export interface FormatInfo {
   vcodec: string; // none, vp9, av01.0.00M.08, ...
   width: number | null;
   height: number | null;
+  quality: string | null;
 }
 
 export interface VideoInfo {
@@ -74,6 +75,7 @@ const RAW_INFO_SCHEMA = z.object({
           .refine((s) => s.match(/^\d+$/))
           .transform(Number)
           .optional(),
+        quality: z.string().optional(),
       })
       .array(),
   }),
@@ -100,19 +102,18 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoInfo> {
         ? f.mimeType.split(";")[1]!
         : "none",
       width: f.width ?? null,
-      height: f.height ?? null
+      height: f.height ?? null,
+      quality: f.quality ?? null
     })),
   };
 }
 
-export async function downloadMedia(id: string, type: string, start: number | null = null, end: number | null = null, resolution: number | null = null): Promise<ArrayBuffer | null> {
+export async function downloadMedia(id: string, type: string, quality: string = "medium"): Promise<ArrayBuffer | null> {
   const videoInfo = await fetchVideoInfo(id);
   let formats = videoInfo.formats;
 
-  resolution = resolution ?? 360;
-  
   if (type == "video") {
-    formats = videoInfo.formats.filter((f) => f.ext === "webm" && f.vcodec !== "none" && f.height === resolution); 
+    formats = videoInfo.formats.filter((f) => f.ext === "webm" && f.vcodec !== "none" && f.quality === quality);
   } else if (type == "audio") {
     formats = videoInfo.formats.filter((f) => f.ext === "webm" && f.acodec !== "none").sort((a, b) => b.filesize! - a.filesize!);
   }
@@ -127,16 +128,23 @@ export async function downloadMedia(id: string, type: string, start: number | nu
     return null;
   }
 
-  start = start ?? 0;
-  end = end ?? format.filesize;
-  
-  const range = `bytes=${start}-${end - 1}`;
+  const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
+  const downloadPromises: Promise<Response>[] = [];
 
-  const res = await fetch(`https://app.backtrackhq.workers.dev/?${format.url}`, {
-    headers: {
-      range: range,
-    },
-  });
-  
-  return res.arrayBuffer();
+  for (let start = 0; start < format.filesize; start += CHUNK_SIZE) {
+    const end = Math.min(start + CHUNK_SIZE, format.filesize);
+    const range = `bytes=${start}-${end - 1}`;
+
+    const downloadPromise = fetch(`https://app.backtrackhq.workers.dev/?${format.url}`, {
+      headers: {
+        range: range,
+      },
+    });
+    downloadPromises.push(downloadPromise);
+  }
+
+  const responses = await Promise.all(downloadPromises);
+  const downloadedChunks = await Promise.all(responses.map(res => res.arrayBuffer()));
+
+  return new Blob(downloadedChunks).arrayBuffer();
 }
