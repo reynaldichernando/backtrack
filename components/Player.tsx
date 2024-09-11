@@ -92,7 +92,11 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
       if (Math.abs(videoRef.current.currentTime - audioRef.current.currentTime) > 0.3) {
         videoRef.current.currentTime = audioRef.current.currentTime;
       }
-      navigator.mediaSession.setPositionState({ duration: audioRef.current.duration, position: audioRef.current.currentTime });
+      
+      try {
+        navigator.mediaSession.setPositionState({ duration: audioRef.current.duration, position: audioRef.current.currentTime });
+      } catch (error) {
+      }
     }, 300);
   };
 
