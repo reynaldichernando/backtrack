@@ -180,8 +180,8 @@ export const search = async (data: SearchData, type: SearchType = 'regular', all
         } else if (type === 'video') {
             return await mediaSearch(
                 data.next ? data.next : `/v.js?q=${encodeURIComponent(data.query)}&o=json&s=0&u=bing&l=us-en&vqd=${apiURL.vqd}&p=-1`,
-                ({ content: url, title, description, duration, images, embed_url, published, publisher }) => ({
-                    url, title, description, duration, images, embed_url, published, publisher
+                ({ content: url, title, description, duration, images, embed_url, published, publisher, uploader }) => ({
+                    url, title, description, duration, images, embed_url, published, publisher, uploader
                 }),
                 all,
             );

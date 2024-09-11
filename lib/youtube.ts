@@ -25,7 +25,7 @@ export interface VideoInfo {
 
 export async function fetchVideoInfoRaw(videoId: string): Promise<any> {
   // prettier-ignore
-  const res = await fetch("https://www.youtube.com/youtubei/v1/player", {
+  const res = await fetch("https://app.backtrackhq.workers.dev/?https://www.youtube.com/youtubei/v1/player", {
     method: "POST",
     body: JSON.stringify({
       videoId,
@@ -35,17 +35,18 @@ export async function fetchVideoInfoRaw(videoId: string): Promise<any> {
           clientVersion: "18.11.34",
           androidSdkVersion: 30,
           hl: "en",
-          timeZone: "UTC",
-          utcOffsetMinutes: 0,
         },
       },
     }),
     headers: {
+      "Origin": "https://www.youtube.com",
+      "content-type": "application/json",
       "X-YouTube-Client-Name": "3",
       "X-YouTube-Client-Version": "18.11.34",
-      "Origin": "https://www.youtube.com",
-      "User-Agent": "com.google.android.youtube/18.11.34 (Linux; U; Android 11) gzip",
-      "content-type": "application/json",
+      "x-cors-headers": JSON.stringify({
+        "user-agent": "com.google.android.youtube/18.11.34 (Linux; U; Android 11) gzip",
+        "origin": "https://www.youtube.com",
+      }),
     }
   });
   return JSON.parse(await res.text());
@@ -102,4 +103,40 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoInfo> {
       height: f.height ?? null
     })),
   };
+}
+
+export async function downloadMedia(id: string, type: string, start: number | null = null, end: number | null = null, resolution: number | null = null): Promise<ArrayBuffer | null> {
+  const videoInfo = await fetchVideoInfo(id);
+  let formats = videoInfo.formats;
+
+  resolution = resolution ?? 360;
+  
+  if (type == "video") {
+    formats = videoInfo.formats.filter((f) => f.ext === "webm" && f.vcodec !== "none" && f.height === resolution); 
+  } else if (type == "audio") {
+    formats = videoInfo.formats.filter((f) => f.ext === "webm" && f.acodec !== "none").sort((a, b) => b.filesize! - a.filesize!);
+  }
+
+  if (formats.length === 0) {
+    return null;
+  }
+
+  const format = formats[0];
+
+  if (!format.filesize) {
+    return null;
+  }
+
+  start = start ?? 0;
+  end = end ?? format.filesize;
+  
+  let range = `bytes=${start}-${end - 1}`;
+
+  const res = await fetch(`https://app.backtrackhq.workers.dev/?${format.url}`, {
+    headers: {
+      range: range,
+    },
+  });
+  
+  return res.arrayBuffer();
 }

@@ -39,7 +39,7 @@ export default function HomePage({ video, onVideoSelect, currentView, setCurrent
                 {videos.map((video) => (
                   <div key={video.id} className="flex items-center space-x-4 cursor-pointer" onClick={() => onVideoSelect(video)}>
                     <div className="relative w-24 h-12 md:w-32 md:h-16 bg-gray-200 rounded-md flex items-center justify-center">
-                      <Image src={video.thumbnail} alt={video.title} layout="fill" objectFit="contain" />
+                      <img src={video.thumbnail} alt={video.title} className="object-contain w-full h-full" />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">{video.title}</p>
@@ -70,15 +70,23 @@ function AddVideoDialog() {
       return {
         id: videoId,
         title: searchResult.title,
-        thumbnail: searchResult.images.large
+        thumbnail: searchResult.images.large,
+        author: searchResult.uploader
       } as Video;
     }));
   }
 
   const handleAddVideo = async (video: Video) => {
-    const videoInfo = await (await fetch(`/api/info?id=${video.id}`)).json()
-    video.author = videoInfo.data.uploader
-    await addVideo(video);
+    // fetch thumbnail and save as base64 string
+    const thumbnailResponse = await fetch(`https://app.backtrackhq.workers.dev/?${video.thumbnail}`);
+    const thumbnailBuffer = await thumbnailResponse.arrayBuffer();
+    const thumbnailBase64 = Buffer.from(thumbnailBuffer).toString('base64');
+
+    // save video info and thumbnail to indexeddb
+    await addVideo({
+      ...video,
+      thumbnail: `data:image/jpeg;base64,${thumbnailBase64}`
+    });
   }
 
   return (
@@ -107,10 +115,11 @@ function AddVideoDialog() {
             <div key={video.id} className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="relative w-16 h-8 md:w-32 md:h-16 bg-gray-200 rounded-md flex items-center justify-center">
-                  <Image src={video.thumbnail} alt={video.title} layout="fill" objectFit="contain" />
+                  <img src={video.thumbnail} alt={video.title} className="object-contain w-full h-full" />
                 </div>
                 <div>
                   <p className="text-sm truncate w-48 md:w-60">{video.title}</p>
+                  <p className="text-xs text-gray-400">{video.author}</p>
                 </div>
               </div>
               <Button size="sm" onClick={() => handleAddVideo(video)}>Add</Button>

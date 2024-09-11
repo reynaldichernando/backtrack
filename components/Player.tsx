@@ -5,6 +5,7 @@ import { toBlobURL } from "@ffmpeg/util";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { ChevronDown } from "lucide-react";
+import { downloadMedia } from "@/lib/youtube";
 
 export default function Player({ video, currentView, setCurrentView }: { video: Video | null, currentView: string, setCurrentView: (view: string) => void }) {
     const ffmpegRef = useRef<FFmpeg>();
@@ -47,22 +48,13 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
         return;
       }
   
-      const videoBuffer = await (await fetch(`/api/download`, {
-        method: 'POST',
-        body: JSON.stringify({
-          id: video.id,
-          type: 'video',
-        })
-      })).arrayBuffer();
-  
-      const audioBuffer = await (await fetch(`/api/download`, {
-        method: 'POST',
-        body: JSON.stringify({
-          id: video.id,
-          type: 'audio',
-        })
-      })).arrayBuffer();
-  
+      const videoBuffer = await downloadMedia(video.id, 'video');
+      const audioBuffer = await downloadMedia(video.id, 'audio');
+
+      if (!videoBuffer || !audioBuffer) {
+        return;
+      }
+      
       const ffmpeg = ffmpegRef.current;
       await ffmpeg.writeFile('video.webm', new Uint8Array(videoBuffer));
       await ffmpeg.writeFile('audio.webm', new Uint8Array(audioBuffer));
