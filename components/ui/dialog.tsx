@@ -26,8 +26,8 @@ export function Dialog({ isOpen, onClose, title, children }: DialogProps) {
           <div className="fixed inset-0 bg-black/80" />
         </TransitionChild>
 
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
+        <div className="fixed bottom-0 left-0 right-0 md:top-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center md:p-4">
             <TransitionChild
               as={Fragment}
               enter="ease-out duration-150"
@@ -37,19 +37,18 @@ export function Dialog({ isOpen, onClose, title, children }: DialogProps) {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <DialogPanel className="w-full max-w-lg transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <div className="flex justify-between items-center mb-4">
-                  <DialogTitle className="text-lg font-semibold leading-none tracking-tight">
-                    {title}
-                  </DialogTitle>
-                  <Button
-                    variant={"ghost"}
-                    onClick={onClose}
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Close</span>
-                  </Button>
-                </div>
+              <DialogPanel className="w-full max-w-lg transform overflow-hidden rounded-t-lg md:rounded-b-lg bg-white pt-4 pl-4 pr-4 md:pb-4 text-left align-middle shadow-xl transition-all">
+                <DialogTitle className="text-lg font-semibold leading-none tracking-tight mb-4">
+                  {title}
+                </DialogTitle>
+                <Button
+                  variant={"ghost"}
+                  onClick={onClose}
+                  className="absolute right-1 top-1"
+                >
+                  <X className="h-5 w-5" />
+                  <span className="sr-only">Close</span>
+                </Button>
                 {children}
               </DialogPanel>
             </TransitionChild>
