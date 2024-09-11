@@ -3,7 +3,7 @@ import { Video } from "@/lib/model/Video";
 import { useEffect, useState } from "react";
 import Player from "./Player";
 import Footer from "./Footer";
-import { extractVideoId } from "@/lib/utils";
+import { extractVideoId, generateThumbnailUrl } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { PlusCircle, Search } from "lucide-react";
 import { Dialog } from "./ui/dialog";
@@ -76,8 +76,8 @@ function AddVideoDialog({ loadVideos }: { loadVideos: () => Promise<void> }) {
   }
 
   const handleAddVideo = async (video: Video) => {
-    const thumbnailResponse = await fetch(`https://app.backtrackhq.workers.dev/?${video.thumbnail}`);
-    const thumbnailBuffer = await thumbnailResponse.arrayBuffer();
+    let thumbnailResponse = await fetch(`https://app.backtrackhq.workers.dev/?${generateThumbnailUrl(video.id)}`);
+    const thumbnailBuffer = thumbnailResponse.status === 404 ? await (await fetch(video.thumbnail)).arrayBuffer() : await thumbnailResponse.arrayBuffer();
     const thumbnailBase64 = Buffer.from(thumbnailBuffer).toString('base64');
 
     await addVideo({

@@ -22,3 +22,16 @@ export function extractVideoId(url: string): string | null {
   const match = url.match(regex)
   return match ? match[1] : null
 }
+
+/**
+ * Generates a thumbnail URL for a given video ID.
+ *
+ * @param {string} videoId - The ID of the video.
+ * @returns {string} - The generated thumbnail URL.
+ */
+export function generateThumbnailUrl(videoId: string | null): string {
+  if (!videoId) {
+    return '';
+  }
+  return `https://i.ytimg.com/vi_webp/${videoId}/maxresdefault.webp`;
+}

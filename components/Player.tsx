@@ -143,6 +143,7 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
             className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"
             playsInline
             autoPlay
+            poster={video?.thumbnail}
             src={videoSrc}
             ref={videoRef}
           >
