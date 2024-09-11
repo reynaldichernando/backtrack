@@ -1,6 +1,6 @@
 import { addVideo, getAllVideos } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Player from "./Player";
 import Footer from "./Footer";
 import { extractVideoId, generateThumbnailUrl } from "@/lib/utils";
