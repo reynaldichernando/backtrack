@@ -90,7 +90,7 @@ function AddVideoDialog({ loadVideos }: { loadVideos: () => Promise<void> }) {
     addToast('Video added successfully');
     await loadVideos();
   }
-  
+
   const handleClose = () => {
     setOpen(false);
   }
@@ -108,33 +108,31 @@ function AddVideoDialog({ loadVideos }: { loadVideos: () => Promise<void> }) {
         Add Video
       </Button>
       <Dialog isOpen={open} onClose={handleClose} title="Add Video">
-        <Description>
-          <form onSubmit={handleSearch}>
-            <div className="flex space-x-2 mb-4">
-              <Input placeholder="Search video or paste link" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-              <Button>
-                <Search className="mr-2 h-4 w-4" />
-                Search
-              </Button>
-            </div>
-          </form>
-          <div className="space-y-4 max-h-96 overflow-y-auto">
-            {videos.map((video) => (
-              <div key={video.id} className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="relative w-16 h-8 md:w-32 md:h-16 bg-gray-200 rounded-md flex items-center justify-center">
-                    <img src={video.thumbnail} alt={video.title} className="object-contain w-full h-full" />
-                  </div>
-                  <div>
-                    <p className="text-sm truncate w-48 md:w-60">{video.title}</p>
-                    <p className="text-xs text-gray-400">{video.author}</p>
-                  </div>
-                </div>
-                <Button size="sm" onClick={() => handleAddVideo(video)}>Add</Button>
-              </div>
-            ))}
+        <form onSubmit={handleSearch}>
+          <div className="flex space-x-2 mb-4">
+            <Input placeholder="Search video or paste link" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <Button>
+              <Search className="mr-2 h-4 w-4" />
+              Search
+            </Button>
           </div>
-        </Description>
+        </form>
+        <div className="space-y-4 max-h-96 overflow-y-auto">
+          {videos.map((video) => (
+            <div key={video.id} className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="relative w-16 h-8 md:w-32 md:h-16 bg-gray-200 rounded-md flex items-center justify-center">
+                  <img src={video.thumbnail} alt={video.title} className="object-contain w-full h-full" />
+                </div>
+                <div>
+                  <p className="text-sm truncate w-48 md:w-60">{video.title}</p>
+                  <p className="text-xs text-gray-400">{video.author}</p>
+                </div>
+              </div>
+              <Button size="sm" onClick={() => handleAddVideo(video)}>Add</Button>
+            </div>
+          ))}
+        </div>
       </Dialog>
     </>
   )

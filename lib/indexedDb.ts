@@ -107,3 +107,37 @@ export const getVideoBinary = async (id: string) => {
     };
   });
 };
+
+export const saveMediaBinary = async (id: string, video: ArrayBuffer, audio: ArrayBuffer) => {
+  await openDB();
+  return new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction([videoBinaryStoreName], 'readwrite');
+    const objectStore = transaction.objectStore(videoBinaryStoreName);
+    const request = objectStore.put({ id, video, audio });
+
+    request.onsuccess = function (event) {
+      resolve();
+    };
+
+    request.onerror = function (event) {
+      reject(event);
+    };
+  });
+};
+
+export const getMediaBinary = async (id: string) => {
+  await openDB();
+  return new Promise<ArrayBuffer>((resolve, reject) => {
+    const transaction = db.transaction([videoBinaryStoreName], 'readonly');
+    const objectStore = transaction.objectStore(videoBinaryStoreName);
+    const request = objectStore.get(id);
+
+    request.onsuccess = function (event) {
+      resolve((event.target as IDBRequest).result);
+    };
+
+    request.onerror = function (event) {
+      reject(event);
+    };
+  });
+};
