@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Transition } from '@headlessui/react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from 'react';
 
 type ToastType = 'info' | 'success' | 'error';
 
@@ -22,15 +21,14 @@ interface ToastProviderProps {
 export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = (message: string, type: ToastType = 'info') => {
+  const addToast = useCallback((message: string, type: ToastType = 'info') => {
     const id = Date.now().toString();
-    setToasts([...toasts, { id, message, type }]);
-    setTimeout(() => removeToast(id), 3000);
-  };
+    setToasts((prevToasts) => [...prevToasts, { id, message, type }]);
+  }, []);
 
-  const removeToast = (id: string) => {
-    setToasts(toasts.filter((toast) => toast.id !== id));
-  };
+  const removeToast = useCallback((id: string) => {
+    setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
+  }, []);
 
   const contextValue: ToastContextValue = {
     addToast,
@@ -40,33 +38,55 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     <ToastContext.Provider value={contextValue}>
       {children}
       <div className="fixed top-4 right-4 z-50">
-        <Transition
-          show={toasts.length > 0}
-          enter="transition-opacity duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="transition-opacity duration-300"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="space-y-2">
-            {toasts.map((toast) => (
-              <div
-                key={toast.id}
-                className={`p-4 bg-white rounded shadow-xl ${toast.type === 'success'
-                    ? 'border-l-4 border-green-500'
-                    : toast.type === 'error'
-                      ? ' border-l-4 border-red-500'
-                      : 'border-l-4 border-blue-500'
-                  }`}
-              >
-                {toast.message}
-              </div>
-            ))}
-          </div>
-        </Transition>
+        <div className="space-y-2">
+          {toasts.map((toast) => (
+            <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
+          ))}
+        </div>
       </div>
     </ToastContext.Provider>
+  );
+};
+
+interface ToastItemProps {
+  toast: Toast;
+  onRemove: (id: string) => void;
+}
+
+const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const appearTimer = setTimeout(() => {
+      setVisible(true);
+    }, 100);
+
+    const disappearTimer = setTimeout(() => {
+      setVisible(false);
+    }, 1700);
+
+    const removeTimer = setTimeout(() => {
+      onRemove(toast.id);
+    }, 2000);
+
+    return () => {
+      clearTimeout(appearTimer);
+      clearTimeout(disappearTimer);
+      clearTimeout(removeTimer);
+    };
+  }, [toast.id, onRemove]);
+
+  return (
+    <div
+      className={`p-4 bg-white rounded shadow-xl ${toast.type === 'success'
+        ? 'border-l-4 border-green-500'
+        : toast.type === 'error'
+          ? 'border-l-4 border-red-500'
+          : 'border-l-4 border-blue-500'
+        } transition ease-in-out duration-300 ${visible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}
+    >
+      {toast.message}
+    </div>
   );
 };
 

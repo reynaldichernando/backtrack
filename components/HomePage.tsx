@@ -109,6 +109,10 @@ function AddVideoDialog({ loadVideos }: { loadVideos: () => Promise<void> }) {
         <PlusCircle className="mr-2 h-4 w-4" />
         Add Video
       </Button>
+      <Button className="w-full justify-start text-left font-normal" variant="outline" onClick={() => addToast(`Test ${Date.now()}`, 'success')}>
+        <PlusCircle className="mr-2 h-4 w-4" />
+        Spam Toast
+      </Button>
       <Dialog isOpen={open} onClose={handleClose} title="Add Video">
         <form onSubmit={handleSearch}>
           <div className="flex space-x-2 mb-4">
