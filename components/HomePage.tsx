@@ -1,4 +1,4 @@
-import { addVideo, getAllVideos } from "@/lib/indexedDb";
+import { addVideo, deleteMediaBinary, deleteVideo, getAllVideos } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
 import { useEffect, useState } from "react";
 import Player from "./Player";
@@ -11,9 +11,11 @@ import { search } from "@/lib/search";
 import { useToast } from "./useToast";
 import { isYoutubeUrl } from "@/lib/utils";
 import { fetchVideoInfo } from "@/lib/youtube";
+import { Dropdown, DropdownItem } from "./ui/dropdown";
 
 export default function HomePage({ video, onVideoSelect, currentView, setCurrentView }: { video: Video | null, onVideoSelect: (video: Video) => void, currentView: string, setCurrentView: (view: string) => void }) {
   const [videos, setVideos] = useState<Video[]>([])
+
 
   useEffect(() => {
     loadVideos();
@@ -22,6 +24,12 @@ export default function HomePage({ video, onVideoSelect, currentView, setCurrent
   const loadVideos = async () => {
     const videos = await getAllVideos()
     setVideos(videos)
+  }
+
+  const handleDeleteVideo = async (video: Video) => {
+    await deleteVideo(video.id);
+    await deleteMediaBinary(video.id);
+    loadVideos();
   }
 
   return (
@@ -39,14 +47,19 @@ export default function HomePage({ video, onVideoSelect, currentView, setCurrent
             <h2 className="text-xl font-semibold mb-4">My Videos</h2>
             <div className="space-y-4">
               {videos.map((video) => (
-                <div key={video.id} className="flex items-center space-x-4 cursor-pointer" onClick={() => onVideoSelect(video)}>
-                  <div className="relative w-24 h-12 md:w-32 md:h-16 bg-gray-200 rounded-md flex items-center justify-center">
-                    <img src={video.thumbnail} alt={video.title} className="object-contain w-full h-full" />
+                <div key={video.id} className="flex items-center justify-between cursor-pointer w-full">
+                  <div className="flex space-x-4" onClick={() => onVideoSelect(video)}>
+                    <div className="relative w-24 h-12 md:w-32 md:h-16 bg-gray-200 rounded-md flex items-center justify-center">
+                      <img src={video.thumbnail} alt={video.title} className="object-contain w-full h-full" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium line-clamp-1">{video.title}</p>
+                      <p className="text-sm text-gray-500">{video.author}</p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium line-clamp-1">{video.title}</p>
-                    <p className="text-sm text-gray-500">{video.author}</p>
-                  </div>
+                  <Dropdown>
+                    <DropdownItem onClick={() => handleDeleteVideo(video)}>Delete</DropdownItem>
+                  </Dropdown>
                 </div>
               ))}
             </div>

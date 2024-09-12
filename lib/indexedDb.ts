@@ -47,6 +47,23 @@ export const addVideo = async (video: Video) => {
   });
 };
 
+export const deleteVideo = async (id: string) => {
+  await openDB();
+  return new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction([videoStoreName], 'readwrite');
+    const objectStore = transaction.objectStore(videoStoreName);
+    const request = objectStore.delete(id);
+
+    request.onsuccess = function () {
+      resolve();
+    };
+
+    request.onerror = function (event) {
+      reject(event);
+    };
+  });
+};
+
 export const getAllVideos = async () => {
   await openDB();
   return new Promise<Video[]>((resolve, reject) => {
@@ -134,6 +151,23 @@ export const getMediaBinary = async (id: string) => {
 
     request.onsuccess = function (event) {
       resolve((event.target as IDBRequest).result);
+    };
+
+    request.onerror = function (event) {
+      reject(event);
+    };
+  });
+};
+
+export const deleteMediaBinary = async (id: string) => {
+  await openDB();
+  return new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction([videoBinaryStoreName], 'readwrite');
+    const objectStore = transaction.objectStore(videoBinaryStoreName);
+    const request = objectStore.delete(id);
+
+    request.onsuccess = function () {
+      resolve();
     };
 
     request.onerror = function (event) {
