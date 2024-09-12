@@ -2,7 +2,6 @@ import { addVideo, getAllVideos } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
 import { useEffect, useState } from "react";
 import Player from "./Player";
-import Footer from "./Footer";
 import { extractVideoId, generateThumbnailUrl } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { PlusCircle, Search } from "lucide-react";
@@ -53,7 +52,6 @@ export default function HomePage({ video, onVideoSelect, currentView, setCurrent
           <Player video={video} currentView={currentView} setCurrentView={setCurrentView} />
         </div>
       </div>
-      <Footer video={video} currentView={currentView} setCurrentView={setCurrentView} />
     </div>
   )
 }
