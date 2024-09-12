@@ -66,9 +66,7 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
       title: video.title,
       artist: video.author,
       artwork: [{
-        src: video.thumbnail,
-        sizes: '160x160',
-        type: 'image/png'
+        src: video.thumbnail
       }]
     };
     navigator.mediaSession.metadata = new MediaMetadata({ title: trackPlaying.title, artist: trackPlaying.artist, artwork: trackPlaying.artwork });
@@ -91,6 +89,10 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
 
       if (Math.abs(videoRef.current.currentTime - audioRef.current.currentTime) > 0.3) {
         videoRef.current.currentTime = audioRef.current.currentTime;
+      }
+
+      if (audioRef.current.paused && !videoRef.current.paused) {
+        videoRef.current.pause();
       }
       
       try {
