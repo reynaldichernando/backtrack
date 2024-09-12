@@ -24,7 +24,7 @@ export default function HomePage({ video, onVideoSelect, currentView, setCurrent
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col">
       <div className={`md:flex ${currentView == "detail" ? "overflow-hidden" : ""}`}>
         <div className="md:w-1/4 p-4 space-y-4 md:overflow-auto md:border-r">
           <div className="flex items-center space-x-2">
@@ -43,7 +43,7 @@ export default function HomePage({ video, onVideoSelect, currentView, setCurrent
                     <img src={video.thumbnail} alt={video.title} className="object-contain w-full h-full" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium">{video.title}</p>
+                    <p className="font-medium line-clamp-1">{video.title}</p>
                     <p className="text-sm text-gray-500">{video.author}</p>
                   </div>
                 </div>
