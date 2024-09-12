@@ -9,6 +9,8 @@ import { Dialog } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { search } from "@/lib/search";
 import { useToast } from "./useToast";
+import { isYoutubeUrl } from "@/lib/utils";
+import { fetchVideoInfo } from "@/lib/youtube";
 
 export default function HomePage({ video, onVideoSelect, currentView, setCurrentView }: { video: Video | null, onVideoSelect: (video: Video) => void, currentView: string, setCurrentView: (view: string) => void }) {
   const [videos, setVideos] = useState<Video[]>([])
@@ -64,6 +66,20 @@ function AddVideoDialog({ loadVideos }: { loadVideos: () => Promise<void> }) {
 
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (isYoutubeUrl(searchQuery)) {
+      const videoId = extractVideoId(searchQuery);
+      const videoInfo = await fetchVideoInfo(videoId || "");
+
+      setVideos([{
+        id: videoId,
+        title: videoInfo.title,
+        thumbnail: generateThumbnailUrl(videoId),
+        author: videoInfo.uploader
+      } as Video]);
+
+      return;
+    }
+
     const res = await search({ query: `${searchQuery} site:youtube.com` }, "video");
     setVideos(res.results.map((searchResult: any) => {
       const videoId = extractVideoId(searchResult.url);

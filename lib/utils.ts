@@ -35,3 +35,14 @@ export function generateThumbnailUrl(videoId: string | null): string {
   }
   return `https://i.ytimg.com/vi_webp/${videoId}/maxresdefault.webp`;
 }
+
+/**
+ * Checks if a given URL is a YouTube URL.
+ *
+ * @param {string} url - The URL to check.
+ * @returns {boolean} - Whether the URL is a YouTube URL or not.
+ */
+export function isYoutubeUrl(url: string): boolean {
+  const regex = /^https?:\/\/(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w\-\_]*)(&(amp;)?‌​[\w\?‌​=]*)?/;
+  return regex.test(url);
+}
