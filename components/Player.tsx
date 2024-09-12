@@ -2,12 +2,12 @@ import { getMediaBinary, saveMediaBinary } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
-import { ChevronDown, Pause, Play } from "lucide-react";
+import { ChevronDown, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { downloadMedia } from "@/lib/youtube";
 import { useToast } from "./useToast";
 import Footer from "./Footer";
 
-export default function Player({ video, currentView, setCurrentView }: { video: Video | null, currentView: string, setCurrentView: (view: string) => void }) {
+export default function Player({ videos, video, currentView, setCurrentView, onVideoSelect }: { videos: Video[], video: Video | null, currentView: string, setCurrentView: (view: string) => void, onVideoSelect: (video: Video) => void }) {
   const [videoSrc, setVideoSrc] = useState<string>();
   const [audioSrc, setAudioSrc] = useState<string>();
 
@@ -90,19 +90,14 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
     }
 
     if (!navigator.mediaSession) { return; }
-    const trackPlaying = {
-      title: video.title,
-      artist: video.author,
-      artwork: [{
-        src: video.thumbnail
-      }]
-    };
-    navigator.mediaSession.metadata = new MediaMetadata({ title: trackPlaying.title, artist: trackPlaying.artist, artwork: trackPlaying.artwork });
+    const currentVideo = videos.find((v) => v.id === video.id);
+    if (!currentVideo) { return; }
+    navigator.mediaSession.metadata = new MediaMetadata({ title: currentVideo.title, artist: currentVideo.author, artwork: [{ src: currentVideo.thumbnail }] });
     navigator.mediaSession.setActionHandler('play', playTrack);
     navigator.mediaSession.setActionHandler('pause', pauseTrack);
     navigator.mediaSession.setActionHandler('stop', stopTrack);
-    // navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
-    // navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
+    navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
+    navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
     //navigator.mediaSession.setActionHandler('seekbackward', function(){});
     //navigator.mediaSession.setActionHandler('seekforward',  function(){});
     //navigator.mediaSession.setActionHandler('seekto', function(){});
@@ -145,6 +140,24 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
     setIsPlaying(false);
   };
 
+  const prevTrack = () => {
+    const currentIndex = videos.findIndex((v) => v.id === video?.id);
+    if (currentIndex === 0) {
+      return;
+    }
+    const prevIndex = currentIndex - 1;
+    onVideoSelect(videos[prevIndex]);
+  };
+
+  const nextTrack = () => {
+    const currentIndex = videos.findIndex((v) => v.id === video?.id);
+    if (currentIndex === videos.length - 1) {
+      return;
+    }
+    const nextIndex = currentIndex + 1;
+    onVideoSelect(videos[nextIndex]);
+  };
+
   const handlePlayPause = () => {
     if (isPlaying) {
       pauseTrack();
@@ -183,8 +196,14 @@ export default function Player({ video, currentView, setCurrentView }: { video: 
             <p className="text-gray-500 mb-4">{video?.author}</p>
           </div>
           <div className="flex justify-center space-x-4">
+            <Button size="icon" variant="ghost" onClick={prevTrack}>
+              <SkipBack className="h-6 w-6" />
+            </Button>
             <Button size="icon" variant="ghost" onClick={handlePlayPause}>
               {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+            </Button>
+            <Button size="icon" variant="ghost" onClick={nextTrack}>
+              <SkipForward className="h-6 w-6" />
             </Button>
           </div>
         </div>

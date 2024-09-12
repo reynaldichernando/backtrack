@@ -51,7 +51,7 @@ export default function HomePage({ video, onVideoSelect, currentView, setCurrent
               ))}
             </div>
           </div>
-          <Player video={video} currentView={currentView} setCurrentView={setCurrentView} />
+          <Player videos={videos} video={video} currentView={currentView} setCurrentView={setCurrentView} onVideoSelect={onVideoSelect} />
         </div>
       </div>
     </div>
