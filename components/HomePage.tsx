@@ -15,7 +15,7 @@ import { Dropdown, DropdownItem } from "./ui/dropdown";
 
 export default function HomePage({ video, onVideoSelect, currentView, setCurrentView }: { video: Video | null, onVideoSelect: (video: Video) => void, currentView: string, setCurrentView: (view: string) => void }) {
   const [videos, setVideos] = useState<Video[]>([])
-
+  const { addToast } = useToast();
 
   useEffect(() => {
     loadVideos();
@@ -29,6 +29,7 @@ export default function HomePage({ video, onVideoSelect, currentView, setCurrent
   const handleDeleteVideo = async (video: Video) => {
     await deleteVideo(video.id);
     await deleteMediaBinary(video.id);
+    addToast('Video deleted successfully', 'success');
     loadVideos();
   }
 
@@ -47,7 +48,7 @@ export default function HomePage({ video, onVideoSelect, currentView, setCurrent
             <h2 className="text-xl font-semibold mb-4">My Videos</h2>
             <div className="space-y-4">
               {videos.map((video) => (
-                <div key={video.id} className="flex items-center justify-between cursor-pointer w-full">
+                <div key={video.id} className="flex items-center justify-between w-full">
                   <div className="flex space-x-4" onClick={() => onVideoSelect(video)}>
                     <div className="relative w-24 h-12 md:w-32 md:h-16 bg-gray-200 rounded-md flex items-center justify-center">
                       <img src={video.thumbnail} alt={video.title} className="object-contain w-full h-full" />
@@ -58,7 +59,9 @@ export default function HomePage({ video, onVideoSelect, currentView, setCurrent
                     </div>
                   </div>
                   <Dropdown>
-                    <DropdownItem onClick={() => handleDeleteVideo(video)}>Delete</DropdownItem>
+                    <DropdownItem onClick={() => handleDeleteVideo(video)}>
+                      <Button variant="destructive">Delete</Button>
+                    </DropdownItem>
                   </Dropdown>
                 </div>
               ))}
@@ -115,7 +118,6 @@ function AddVideoDialog({ loadVideos }: { loadVideos: () => Promise<void> }) {
       thumbnail: `data:image/jpeg;base64,${thumbnailBase64}`
     });
 
-    setOpen(false);
     addToast('Video added successfully');
     await loadVideos();
   }

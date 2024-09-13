@@ -5,12 +5,10 @@ import { Ellipsis } from "lucide-react";
 export function Dropdown({ children }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <RadixDropdownMenu.Root>
-      <RadixDropdownMenu.Trigger>
-        <Button size="icon" variant="ghost" type="button">
-          <Ellipsis className="h-4 w-4" />
-        </Button>
+      <RadixDropdownMenu.Trigger className="focus:outline-none hover:outline-none">
+        <Ellipsis className="h-4 w-4" />
       </RadixDropdownMenu.Trigger>
-      <RadixDropdownMenu.Content className="absolute right-0 mt-2 p-4 rounded-md bg-white shadow-lg focus:outline-none hover:outline-none">
+      <RadixDropdownMenu.Content className="fixed right-0 top-0 p-2 border rounded-md bg-white shadow-lg focus:outline-none hover:outline-none">
         {children}
       </RadixDropdownMenu.Content>
     </RadixDropdownMenu.Root>
@@ -19,7 +17,7 @@ export function Dropdown({ children }: React.HTMLAttributes<HTMLDivElement>) {
 
 export function DropdownItem({ children, onClick }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <RadixDropdownMenu.Item onClick={onClick}>
+    <RadixDropdownMenu.Item onClick={onClick} className="focus:outline-none hover:outline-none">
       {children}
     </RadixDropdownMenu.Item>
   )
