@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { ChevronDown, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { downloadMedia } from "@/lib/youtube";
 import { useToast } from "./useToast";
-import Footer from "./Footer";
+import MiniPlayer from "./MiniPlayer";
 
 export default function Player({ videos, video, currentView, setCurrentView, onVideoSelect }: { videos: Video[], video: Video | null, currentView: string, setCurrentView: (view: string) => void, onVideoSelect: (video: Video) => void }) {
   const [videoSrc, setVideoSrc] = useState<string>();
@@ -209,7 +209,7 @@ export default function Player({ videos, video, currentView, setCurrentView, onV
           </div>
         </div>
       </div>
-      <Footer video={video} currentView={currentView} setCurrentView={setCurrentView} isPlaying={isPlaying} handlePlayPause={handlePlayPause} />
+      <MiniPlayer video={video} currentView={currentView} setCurrentView={setCurrentView} isPlaying={isPlaying} handlePlayPause={handlePlayPause} />
     </>
   );
 }
