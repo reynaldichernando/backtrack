@@ -52,9 +52,6 @@ export default function Player({ videos, video, currentView, setCurrentView, onV
       return;
     }
 
-    setVideoSrc('');
-    setAudioSrc('');
-
     const media: any = await getMediaBinary(video.id);
 
     if (media) {
@@ -88,8 +85,11 @@ export default function Player({ videos, video, currentView, setCurrentView, onV
       setAudioSrc(audioUrl);
       addToast('Video saved successfully');
     }
+    
+  };
 
-    if (!navigator.mediaSession) { return; }
+  const setHandlers = () => {
+    if (!video) { return; }
     const currentVideo = videos.find((v) => v.id === video.id);
     if (!currentVideo) { return; }
     navigator.mediaSession.metadata = new MediaMetadata({ title: currentVideo.title, artist: currentVideo.author, artwork: [{ src: currentVideo.thumbnail }] });
@@ -103,7 +103,7 @@ export default function Player({ videos, video, currentView, setCurrentView, onV
     //navigator.mediaSession.setActionHandler('seekto', function(){});
     navigator.mediaSession.playbackState = "playing";
     setIsPlaying(true);
-  };
+  }
 
   const playTrack = () => {
     if (videoRef.current) {
@@ -189,6 +189,7 @@ export default function Player({ videos, video, currentView, setCurrentView, onV
               autoPlay
               src={audioSrc}
               ref={audioRef}
+              onPlay={setHandlers}
             >
               <source src={audioSrc} type="audio/webm" />
             </audio>
