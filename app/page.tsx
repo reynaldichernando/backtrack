@@ -1,23 +1,12 @@
 "use client";
 
-import HomePage from "@/components/HomePage";
-import { ToastProvider } from "@/components/useToast";
-import { Video } from "@/lib/model/Video"
-import { useState } from "react";
+import Main from "@/components/Main";
+import { ToastProvider } from "@/components/Toast";
 
-export default function BacktrackApp() {
-  const [currentView, setCurrentView] = useState("home")
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null)
-
+export default function App() {
   return (
     <ToastProvider>
-      <HomePage video={selectedVideo} onVideoSelect={(video) => {
-        setSelectedVideo(video)
-        setCurrentView("detail")
-      }}
-        currentView={currentView}
-        setCurrentView={setCurrentView}
-      />
+      <Main />
     </ToastProvider>
   )
 }

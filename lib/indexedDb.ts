@@ -1,3 +1,4 @@
+import { MediaBinaryData } from "./model/MediaBinaryData";
 import { Video } from "./model/Video";
 
 const dbName = 'db';
@@ -144,7 +145,7 @@ export const saveMediaBinary = async (id: string, video: ArrayBuffer, audio: Arr
 
 export const getMediaBinary = async (id: string) => {
   await openDB();
-  return new Promise<ArrayBuffer>((resolve, reject) => {
+  return new Promise<MediaBinaryData>((resolve, reject) => {
     const transaction = db.transaction([videoBinaryStoreName], 'readonly');
     const objectStore = transaction.objectStore(videoBinaryStoreName);
     const request = objectStore.get(id);

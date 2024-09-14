@@ -41,5 +41,9 @@ public/swe-worker*
 
 certificates
 
-#firebase
+# firebase
 .firebase
+
+# IDE
+.vscode
+.idx

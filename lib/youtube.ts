@@ -24,7 +24,7 @@ export interface VideoInfo {
   formats: FormatInfo[];
 }
 
-export async function fetchVideoInfoRaw(videoId: string): Promise<any> {
+export async function fetchVideoInfoRaw(videoId: string): Promise<unknown> {
   // prettier-ignore
   const res = await fetch("https://app.backtrackhq.workers.dev/?https://www.youtube.com/youtubei/v1/player", {
     method: "POST",

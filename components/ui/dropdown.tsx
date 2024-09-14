@@ -1,5 +1,4 @@
 import * as RadixDropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Button } from "./button";
 import { Ellipsis } from "lucide-react";
 
 export function Dropdown({ children }: React.HTMLAttributes<HTMLDivElement>) {
