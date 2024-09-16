@@ -2,7 +2,7 @@ import { getMediaBinary, saveMediaBinary } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { ChevronDown, FastForward, Pause, Play, Rewind, SkipBack, SkipForward } from "lucide-react";
+import { ChevronDown, FastForward, Maximize, Minimize, Pause, Play, Rewind, SkipBack, SkipForward } from "lucide-react";
 import { downloadMedia } from "@/lib/youtube";
 import { useToast } from "../hooks/useToast";
 import { MediaBinaryData } from "@/lib/model/MediaBinaryData";
@@ -14,6 +14,7 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
   const [loading, setLoading] = useState(false);
   const [seeking, setSeeking] = useState(false);
   const [tempPosition, setTempPosition] = useState(0);
+  const [maximized, setMaximized] = useState(false);
 
   useEffect(() => {
     getVideo();
@@ -88,6 +89,10 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
 
+  const handleToggleMaximize = () => {
+    setMaximized(!maximized);
+  }
+
   return (
     <div className={`flex flex-col fixed top-0 right-0 w-full md:w-3/4 h-screen bg-white transition duration-300 ease-out ${currentView == "detail" ? "transform translate-y-0 opacity-100" : "transform translate-y-full opacity-0"}`}>
       <div className="p-4 overflow-auto h-full flex flex-col">
@@ -96,14 +101,19 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
             <ChevronDown className="m-2 h-4 w-4" />
           </Button>
         </div>
-        <div className="md:w-2/3 mx-auto">
-          {children}
+        <div className={maximized ? "md:w-full" : "md:w-2/3 mx-auto"}>
+          <div className="relative">
+            <Button variant="ghost" className="mb-4 absolute top-2 right-2 z-10" onClick={handleToggleMaximize}>
+              {maximized ? <Minimize className="h-4 w-4 text-gray-500" /> : <Maximize className="h-4 w-4 text-gray-500" />}
+            </Button>
+            {children}
+          </div>
           <h2 className="text-xl font-semibold mb-2">{currentVideo?.title}</h2>
-          <p className="text-gray-500 mb-4">{currentVideo?.author}</p>
+          <p className="text-gray-500">{currentVideo?.author}</p>
         </div>
-        <div className="flex flex-col flex-grow justify-around items-center">
+        <div className="flex flex-col flex-grow justify-center items-center">
           <Slider.Root
-            className="relative flex items-center select-none touch-none w-96 max-w-xs md:w-1/2 md:max-w-none mx-auto"
+            className="relative flex items-center select-none touch-none w-96 max-w-xs md:w-1/2 md:max-w-none mx-auto mb-8"
             value={[seeking ? tempPosition : position]}
             max={duration}
             onValueChange={(values) => handleSeekChange(values[0])}
@@ -121,7 +131,7 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
               aria-label="Scrubber"
             />
           </Slider.Root>
-          <div className="flex justify-center space-x-16 mb-16">
+          <div className="flex justify-center space-x-16">
             <Button size="icon" variant="ghost" onClick={onClickPrevTrack}>
               <Rewind className="size-8" fill="currentColor" />
             </Button>
