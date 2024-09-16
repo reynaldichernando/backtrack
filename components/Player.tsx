@@ -31,7 +31,6 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
       const audioUrl = URL.createObjectURL(audioBlob);
 
       updateMediaSources(videoUrl, audioUrl);
-      addToast('Video loaded from cache', 'info');
     } else {
       addToast('Downloading video...', 'info');
       setLoading(true);

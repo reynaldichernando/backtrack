@@ -40,6 +40,8 @@ export default function Main() {
 
       if (audioRef.current.paused && !videoRef.current.paused) {
         videoRef.current.pause();
+      } else if (!audioRef.current.paused && videoRef.current.paused) {
+        videoRef.current.play();
       }
 
       try {
@@ -102,47 +104,39 @@ export default function Main() {
     navigator.mediaSession.setActionHandler('stop', stopTrack);
     navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
     navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
+    navigator.mediaSession.setActionHandler('seekto', (details: any) => seekTo(details.seekTime));
     navigator.mediaSession.playbackState = "playing";
     setIsPlaying(true);
   }
 
   const playTrack = () => {
-    if (videoRef.current) {
-      videoRef.current.play();
-    }
-    if (audioRef.current) {
-      audioRef.current.play();
-    }
+    if (!videoRef.current || !audioRef.current) { return; }
+    videoRef.current.play();
+    audioRef.current.play();
     navigator.mediaSession.playbackState = "playing";
     setIsPlaying(true);
   };
 
   const pauseTrack = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
+    if (!videoRef.current || !audioRef.current) { return; }
+    videoRef.current.pause();
+    audioRef.current.pause();
     navigator.mediaSession.playbackState = "paused";
     setIsPlaying(false);
   };
 
   const stopTrack = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    navigator.mediaSession.playbackState = "none";
+    if (!videoRef.current || !audioRef.current) { return; }
+    videoRef.current.pause();
+    audioRef.current.pause();
+
+    videoRef.current.currentTime = 0;
+    audioRef.current.currentTime = 0;
+    
     setIsPlaying(false);
   };
 
   const prevTrack = () => {
-    stopTrack();
     const currentIndex = videos.findIndex((video) => video.id === currentVideo?.id);
     if (currentIndex === 0) {
       return;
@@ -152,7 +146,6 @@ export default function Main() {
   };
 
   const nextTrack = () => {
-    stopTrack();
     const currentIndex = videos.findIndex((video) => video.id === currentVideo?.id);
     if (currentIndex === videos.length - 1) {
       return;
@@ -160,6 +153,12 @@ export default function Main() {
     const nextIndex = currentIndex + 1;
     setCurrentVideo(videos[nextIndex]);
   };
+
+  const seekTo = (time: number) => {
+    if (!videoRef.current || !audioRef.current) { return; }
+    videoRef.current.currentTime = time;
+    audioRef.current.currentTime = time;
+  }
 
   const handleTogglePlay = () => {
     if (isPlaying) {
