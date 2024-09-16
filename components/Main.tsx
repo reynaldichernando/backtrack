@@ -211,6 +211,7 @@ export default function Main() {
                 src={audioSrc}
                 ref={audioRef}
                 onPlay={setHandlers}
+                onEnded={nextTrack}
               >
                 <source src={audioSrc} type="audio/webm" />
               </audio>
