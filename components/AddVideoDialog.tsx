@@ -8,14 +8,20 @@ import { Button } from "./ui/button";
 import { Dialog } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { SearchResultItem } from "@/lib/model/SearchResultItem";
+import Spinner from "./ui/spinner";
 
 export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Video) => void }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [videos, setVideos] = useState<Video[]>([])
   const [open, setOpen] = useState(false);
 
+  const [searchLoading, setSearchLoading] = useState(false);
+
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (!searchQuery) { return; }
+    setSearchLoading(true);
+
     if (isYoutubeUrl(searchQuery)) {
       const videoId = extractVideoId(searchQuery);
       const videoInfo = await fetchVideoInfo(videoId || "");
@@ -26,7 +32,7 @@ export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Vid
         thumbnail: generateThumbnailUrl(videoId),
         author: videoInfo.uploader
       } as Video]);
-
+      setSearchLoading(false);
       return;
     }
 
@@ -40,6 +46,7 @@ export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Vid
         author: searchResult.uploader
       } as Video;
     }));
+    setSearchLoading(false);
   }
 
   const handleClose = () => {
@@ -63,8 +70,10 @@ export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Vid
           <div className="flex space-x-2 mb-4">
             <Input data-autofocus autoFocus placeholder="Search video or paste link" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             <Button>
-              <Search className="mr-2 h-4 w-4" />
-              Search
+              {searchLoading
+                ?
+                <Spinner className="h-4 w-4" /> :
+                <Search className="h-4 w-4" />}
             </Button>
           </div>
         </form>
