@@ -1,14 +1,16 @@
 import { getMediaBinary, saveMediaBinary } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { ChevronDown, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { downloadMedia } from "@/lib/youtube";
 import { useToast } from "../hooks/useToast";
 import { MediaBinaryData } from "@/lib/model/MediaBinaryData";
+import Spinner from "./ui/spinner";
 
 export default function Player({ children, currentVideo, currentView, isPlaying, onBack, onTogglePlay, onClickPrevTrack, onClickNextTrack, updateMediaSources }: { children: React.ReactNode, currentVideo: Video | null, currentView: string, isPlaying: boolean, onBack: () => void, onTogglePlay: () => void, onClickPrevTrack: () => void, onClickNextTrack: () => void, updateMediaSources: (videoSrc: string, audioSrc: string) => void }) {
   const { addToast } = useToast();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     getVideo();
@@ -29,27 +31,38 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
       const audioUrl = URL.createObjectURL(audioBlob);
 
       updateMediaSources(videoUrl, audioUrl);
-      addToast('Video loaded from cache');
+      addToast('Video loaded from cache', 'info');
     } else {
-      addToast('Downloading video...');
+      addToast('Downloading video...', 'info');
+      setLoading(true);
 
-      const videoBuffer = await downloadMedia(currentVideo.id, 'video');
-      const audioBuffer = await downloadMedia(currentVideo.id, 'audio');
+      try {
+        const videoBuffer = await downloadMedia(currentVideo.id, 'video');
+        const audioBuffer = await downloadMedia(currentVideo.id, 'audio');
 
-      if (!videoBuffer || !audioBuffer) {
-        return;
+        if (!videoBuffer || !audioBuffer) {
+          setLoading(false);
+          addToast('Failed to download video', 'error');
+          return
+        }
+
+        await saveMediaBinary(currentVideo.id, videoBuffer, audioBuffer);
+
+        const videoBlob = new Blob([videoBuffer], { type: 'video/webm' });
+        const audioBlob = new Blob([audioBuffer], { type: 'audio/webm' });
+
+        const videoUrl = URL.createObjectURL(videoBlob);
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        updateMediaSources(videoUrl, audioUrl);
+        addToast('Video saved successfully', 'success');
+      } catch (error) {
+        setLoading(false);
+        addToast('Failed to download video', 'error');
+        console.error(error);
+      } finally {
+        setLoading(false);
       }
-
-      await saveMediaBinary(currentVideo.id, videoBuffer, audioBuffer);
-
-      const videoBlob = new Blob([videoBuffer], { type: 'video/webm' });
-      const audioBlob = new Blob([audioBuffer], { type: 'audio/webm' });
-
-      const videoUrl = URL.createObjectURL(videoBlob);
-      const audioUrl = URL.createObjectURL(audioBlob);
-
-      updateMediaSources(videoUrl, audioUrl);
-      addToast('Video saved successfully');
     }
   };
 
@@ -70,7 +83,7 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
               <SkipBack className="h-6 w-6" />
             </Button>
             <Button size="icon" variant="ghost" onClick={onTogglePlay}>
-              {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+              {loading ? <Spinner className="h-6 w-6" /> : isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
             </Button>
             <Button size="icon" variant="ghost" onClick={onClickNextTrack}>
               <SkipForward className="h-6 w-6" />
