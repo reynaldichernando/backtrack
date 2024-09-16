@@ -42,6 +42,7 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
 
         if (!videoBuffer || !audioBuffer) {
           setLoading(false);
+          updateMediaSources('', '');
           addToast('Failed to download video', 'error');
           return
         }
@@ -58,6 +59,7 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
         addToast('Video saved successfully', 'success');
       } catch (error) {
         setLoading(false);
+        updateMediaSources('', '');
         addToast('Failed to download video', 'error');
         console.error(error);
       } finally {

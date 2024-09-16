@@ -142,6 +142,7 @@ export default function Main() {
   };
 
   const prevTrack = () => {
+    stopTrack();
     const currentIndex = videos.findIndex((video) => video.id === currentVideo?.id);
     if (currentIndex === 0) {
       return;
@@ -151,6 +152,7 @@ export default function Main() {
   };
 
   const nextTrack = () => {
+    stopTrack();
     const currentIndex = videos.findIndex((video) => video.id === currentVideo?.id);
     if (currentIndex === videos.length - 1) {
       return;
