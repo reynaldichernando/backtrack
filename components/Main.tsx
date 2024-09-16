@@ -22,6 +22,9 @@ export default function Main() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
+
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -34,17 +37,20 @@ export default function Main() {
       if (!navigator.mediaSession) { return; }
       if (videoRef.current.duration < 0 || audioRef.current.duration < 0) { return; }
 
-      if (Math.abs(videoRef.current.currentTime - audioRef.current.currentTime) > 0.3) {
-        videoRef.current.currentTime = audioRef.current.currentTime;
-      }
-
-      if (audioRef.current.paused && !videoRef.current.paused) {
-        videoRef.current.pause();
-      } else if (!audioRef.current.paused && videoRef.current.paused) {
-        videoRef.current.play();
-      }
-
       try {
+        if (Math.abs(videoRef.current.currentTime - audioRef.current.currentTime) > 0.3) {
+          videoRef.current.currentTime = audioRef.current.currentTime;
+        }
+
+        if (audioRef.current.paused && !videoRef.current.paused) {
+          videoRef.current.pause();
+        } else if (!audioRef.current.paused && videoRef.current.paused) {
+          videoRef.current.play();
+        }
+
+        setPosition(videoRef.current.currentTime);
+        setDuration(videoRef.current.duration);
+
         navigator.mediaSession.setPositionState({ duration: audioRef.current.duration, position: audioRef.current.currentTime });
       } catch (error) {
       }
@@ -132,7 +138,7 @@ export default function Main() {
 
     videoRef.current.currentTime = 0;
     audioRef.current.currentTime = 0;
-    
+
     setIsPlaying(false);
   };
 
@@ -155,9 +161,13 @@ export default function Main() {
   };
 
   const seekTo = (time: number) => {
-    if (!videoRef.current || !audioRef.current) { return; }
-    videoRef.current.currentTime = time;
+    if (!audioRef.current || !videoRef.current) { return; }
+    audioRef.current.load();
+
     audioRef.current.currentTime = time;
+    videoRef.current.currentTime = time;
+
+    playTrack();
   }
 
   const handleTogglePlay = () => {
@@ -189,11 +199,14 @@ export default function Main() {
             currentVideo={currentVideo}
             currentView={currentView}
             isPlaying={isPlaying}
+            position={position}
+            duration={duration}
             onBack={handlePlayerBack}
             onTogglePlay={handleTogglePlay}
             onClickPrevTrack={prevTrack}
             onClickNextTrack={nextTrack}
             updateMediaSources={updateMediaSources}
+            onSeekTo={seekTo}
           >
             <video
               className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"

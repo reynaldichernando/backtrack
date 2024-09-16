@@ -21,7 +21,7 @@ export default function MiniPlayer({ currentVideo, currentView, isPlaying, onCli
       </div>
       {currentVideo && (
         <Button size="icon" variant="ghost" onClick={handleTogglePlay}>
-          {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+          {isPlaying ? <Pause className="h-6 w-6" fill="currentColor" /> : <Play className="h-6 w-6" fill="currentColor" />}
         </Button>
       )}
     </div>
