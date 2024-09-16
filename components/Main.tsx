@@ -6,8 +6,6 @@ import { useState, useRef, useEffect } from "react";
 import AddVideoDialog from "./AddVideoDialog";
 import MiniPlayer from "./MiniPlayer";
 import Player from "./Player";
-import { Button } from "./ui/button";
-import { Dropdown, DropdownItem } from "./ui/dropdown";
 import MyVideos from "./MyVideos";
 
 export default function Main() {
@@ -110,7 +108,7 @@ export default function Main() {
     navigator.mediaSession.setActionHandler('stop', stopTrack);
     navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
     navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
-    navigator.mediaSession.setActionHandler('seekto', (details: any) => seekTo(details.seekTime));
+    navigator.mediaSession.setActionHandler('seekto', (details: MediaSessionActionDetails) => seekTo(details.seekTime ?? 0));
     navigator.mediaSession.playbackState = "playing";
     setIsPlaying(true);
   }

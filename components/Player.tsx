@@ -2,7 +2,7 @@ import { getMediaBinary, saveMediaBinary } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { ChevronDown, FastForward, Maximize, Minimize, Pause, Play, Rewind, SkipBack, SkipForward } from "lucide-react";
+import { ChevronDown, FastForward, Maximize, Minimize, Pause, Play, Rewind } from "lucide-react";
 import { downloadMedia } from "@/lib/youtube";
 import { useToast } from "../hooks/useToast";
 import { MediaBinaryData } from "@/lib/model/MediaBinaryData";
