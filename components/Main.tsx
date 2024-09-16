@@ -8,6 +8,7 @@ import MiniPlayer from "./MiniPlayer";
 import Player from "./Player";
 import { Button } from "./ui/button";
 import { Dropdown, DropdownItem } from "./ui/dropdown";
+import MyVideos from "./MyVideos";
 
 export default function Main() {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -183,29 +184,7 @@ export default function Main() {
             <AddVideoDialog onAddVideo={handleAddVideo} />
           </div>
           <div className="md:w-3/4 p-4 md:overflow-auto pb-28 md:h-screen">
-            <div>
-              <h2 className="text-xl font-semibold mb-4">My Videos</h2>
-              <div className="space-y-4">
-                {videos.map((video) => (
-                  <div key={video.id} className="flex items-center justify-between w-full">
-                    <div className="flex space-x-4" onClick={() => handleSelectVideo(video)}>
-                      <div className="relative w-24 h-12 md:w-32 md:h-16 bg-gray-200 rounded-md flex items-center justify-center">
-                        <img src={video.thumbnail} alt={video.title} className="object-contain w-full h-full" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium line-clamp-1">{video.title}</p>
-                        <p className="text-sm text-gray-500">{video.author}</p>
-                      </div>
-                    </div>
-                    <Dropdown>
-                      <DropdownItem onClick={() => handleDeleteVideo(video)}>
-                        <Button variant="destructive">Delete</Button>
-                      </DropdownItem>
-                    </Dropdown>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <MyVideos videos={videos} onSelectVideo={handleSelectVideo} onDeleteVideo={handleDeleteVideo} />
             <Player
               currentVideo={currentVideo}
               currentView={currentView}
