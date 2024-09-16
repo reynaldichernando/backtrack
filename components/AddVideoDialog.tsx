@@ -9,6 +9,7 @@ import { Dialog } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { SearchResultItem } from "@/lib/model/SearchResultItem";
 import Spinner from "./ui/spinner";
+import { useToast } from "@/hooks/useToast";
 
 export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Video) => void }) {
   const [searchQuery, setSearchQuery] = useState("")
@@ -79,19 +80,46 @@ export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Vid
         </form>
         <div className="space-y-6 max-h-80 overflow-y-auto mt-8 pb-6 md:pb-0">
           {videos.map((video) => (
-            <div key={video.id} className="flex items-center justify-between space-x-2">
-              <div className="relative w-1/6 aspect-video bg-gray-200 rounded-md">
-                <img src={video.thumbnail} alt={video.title} className="object-contain w-full h-full" />
-              </div>
-              <div className="w-4/6">
-                <p className="text-sm truncate">{video.title}</p>
-                <p className="text-xs text-gray-400">{video.author}</p>
-              </div>
-              <Button size="sm" onClick={() => onAddVideo(video)}>Add</Button>
-            </div>
+            <VideoItem key={video.id} video={video} onClick={() => onAddVideo(video)} />
           ))}
         </div>
       </Dialog>
     </>
+  )
+}
+
+function VideoItem({ video, onClick }: { video: Video, onClick: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const { addToast } = useToast();
+
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      await onClick();
+    } catch (error) {
+      addToast('Failed to add video', 'error');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div key={video.id} className="flex items-center justify-between space-x-2">
+      <div className="relative w-1/6 aspect-video bg-gray-200 rounded-md">
+        <img src={video.thumbnail} alt={video.title} className="object-contain w-full h-full" />
+      </div>
+      <div className="w-4/6">
+        <p className="text-sm truncate">{video.title}</p>
+        <p className="text-xs text-gray-400">{video.author}</p>
+      </div>
+      <Button size="sm" onClick={handleClick} disabled={loading}>
+        {loading
+          ?
+          <Spinner className="h-4 w-4" /> :
+          'Add'
+        }
+      </Button>
+    </div>
   )
 }

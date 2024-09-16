@@ -73,7 +73,7 @@ export default function Main() {
       thumbnail: `data:image/jpeg;base64,${thumbnailBase64}`
     });
 
-    addToast('Video added successfully');
+    addToast('Video added successfully', 'success');
     await loadVideos();
   }
 
