@@ -1,6 +1,6 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { ExpirationPlugin, NetworkFirst, Serwist } from "serwist";
+import { CacheFirst, ExpirationPlugin, Serwist } from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -19,7 +19,7 @@ const serwist = new Serwist({
     ...defaultCache,
     {
       matcher: /\/.*/i,
-      handler: new NetworkFirst({
+      handler: new CacheFirst({
         cacheName: 'dynamicCache',
         plugins: [
           new ExpirationPlugin({
