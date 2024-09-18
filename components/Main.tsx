@@ -191,7 +191,7 @@ export default function Main() {
           </div>
           <AddVideoDialog onAddVideo={handleAddVideo} />
         </div>
-        <div className="md:w-3/4 p-4 md:overflow-auto pb-28 md:h-screen">
+        <div className="w-full md:w-3/4 p-4 md:overflow-auto pb-28 md:h-screen">
           <MyVideos videos={videos} onSelectVideo={handleSelectVideo} onDeleteVideo={handleDeleteVideo} />
           <Player
             currentVideo={currentVideo}

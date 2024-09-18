@@ -15,6 +15,7 @@ export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Vid
   const [searchQuery, setSearchQuery] = useState("")
   const [videos, setVideos] = useState<Video[]>([])
   const [open, setOpen] = useState(false);
+  const { addToast } = useToast();
 
   const [searchLoading, setSearchLoading] = useState(false);
 
@@ -23,31 +24,34 @@ export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Vid
     if (!searchQuery) { return; }
     setSearchLoading(true);
 
-    if (isYoutubeUrl(searchQuery)) {
-      const videoId = extractVideoId(searchQuery);
-      const videoInfo = await fetchVideoInfo(videoId || "");
+    try {
+      if (isYoutubeUrl(searchQuery)) {
+        const videoId = extractVideoId(searchQuery);
+        const videoInfo = await fetchVideoInfo(videoId || "");
 
-      setVideos([{
-        id: videoId,
-        title: videoInfo.title,
-        thumbnail: generateThumbnailUrl(videoId),
-        author: videoInfo.uploader
-      } as Video]);
+        setVideos([{
+          id: videoId,
+          title: videoInfo.title,
+          thumbnail: generateThumbnailUrl(videoId),
+          author: videoInfo.uploader
+        } as Video]);
+      } else {
+        const res = await search({ query: `${searchQuery} site:youtube.com` });
+        setVideos(res.results.map((searchResult: SearchResultItem) => {
+          const videoId = extractVideoId(searchResult.url);
+          return {
+            id: videoId,
+            title: searchResult.title,
+            thumbnail: searchResult.images.large,
+            author: searchResult.uploader
+          } as Video;
+        }));
+      }
+    } catch (error) {
+      addToast('Failed to search', 'error');
+    } finally {
       setSearchLoading(false);
-      return;
     }
-
-    const res = await search({ query: `${searchQuery} site:youtube.com` });
-    setVideos(res.results.map((searchResult: SearchResultItem) => {
-      const videoId = extractVideoId(searchResult.url);
-      return {
-        id: videoId,
-        title: searchResult.title,
-        thumbnail: searchResult.images.large,
-        author: searchResult.uploader
-      } as Video;
-    }));
-    setSearchLoading(false);
   }
 
   const handleClose = () => {

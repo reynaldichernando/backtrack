@@ -86,6 +86,9 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
   const getMinuteSecondPosition = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
+    if (isNaN(minutes) || isNaN(seconds)) {
+      return '--:--';
+    }
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
 
@@ -94,7 +97,7 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
   }
 
   return (
-    <div className={`flex flex-col fixed top-0 right-0 w-full md:w-3/4 h-screen bg-white transition duration-300 ease-out ${currentView == "detail" ? "transform translate-y-0 opacity-100" : "transform translate-y-full opacity-0"}`}>
+    <div className={`flex flex-col fixed top-0 right-0 w-full lg:w-3/4 h-screen bg-white transition duration-300 ease-out ${currentView == "detail" ? "transform translate-y-0 opacity-100" : "transform translate-y-full opacity-0"}`}>
       <div className="p-4 overflow-auto h-full flex flex-col">
         <div>
           <Button variant="ghost" className="mb-4" onClick={onBack}>
@@ -111,9 +114,9 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
           <h2 className="text-xl font-semibold mb-2">{currentVideo?.title}</h2>
           <p className="text-gray-500">{currentVideo?.author}</p>
         </div>
-        <div className="flex flex-col flex-grow justify-center items-center">
+        <div className="flex flex-col flex-grow justify-evenly items-center">
           <Slider.Root
-            className="relative flex items-center select-none touch-none w-96 max-w-xs md:w-1/2 md:max-w-none mx-auto mb-8"
+            className="relative flex items-center select-none touch-none w-96 max-w-xs md:w-1/2 md:max-w-none mx-auto pt-8 pb-10"
             value={[seeking ? tempPosition : position]}
             max={duration}
             onValueChange={(values) => handleSeekChange(values[0])}
