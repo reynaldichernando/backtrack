@@ -39,6 +39,9 @@ export const metadata: Metadata = {
     },
     description: APP_DESCRIPTION,
   },
+  other: {
+    "mobile-web-app-capable": "yes",
+  }
 };
 
 export const viewport: Viewport = {
