@@ -9,7 +9,7 @@ export default function MiniPlayer({ currentVideo, currentView, isPlaying, onCli
   }
   
   return (
-    <div className={`border-t p-4 flex items-center justify-between bg-white fixed bottom-0 left-0 right-0 transition-transform duration-300 ease-out ${currentView == "detail" ? "transform translate-y-full" : "transform translate-y-0"}`} onClick={onClick}>
+    <div id="mini-player" className={`border-t p-4 flex items-center justify-between bg-white fixed bottom-0 left-0 right-0 transition-transform duration-300 ease-out ${currentView == "detail" ? "transform translate-y-full" : "transform translate-y-0"}`} onClick={onClick}>
       <div className="flex items-center space-x-2">
         <div className="aspect-square w-10">
           <img src={currentVideo?.thumbnail} alt={currentVideo?.title} className="object-cover w-full h-full" />

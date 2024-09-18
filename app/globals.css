@@ -66,3 +66,7 @@
     @apply bg-background text-foreground;
   }
 }
+
+#mini-player {
+  padding-bottom: env(safe-area-inset-bottom);
+}
