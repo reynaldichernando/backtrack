@@ -1,4 +1,5 @@
-# BackTrack
+<img src="public/144.png" width="24" height="24" style="float: left; margin-right: 10px;"> BackTrack
+-
 
 Standalone YouTube Media Library
 
@@ -8,7 +9,6 @@ https://backtrackhq.web.app/
 
 ### Search and download videos from YouTube
 <!-- screenshots -->
-
 
 ### Web app install and offline support
 <!-- screenshots -->
