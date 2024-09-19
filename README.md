@@ -8,13 +8,14 @@ https://backtrackhq.web.app/
 ## Core Features
 
 ### Search and download videos from YouTube
-<!-- screenshots -->
+![Search and download videos from YouTube](/assets/hero1.png)
+
 
 ### Web app install and offline support
-<!-- screenshots -->
+![Web app install and offline support](/assets/hero2.png)
 
 ### Rich media controls UI with Media Session
-<!-- screenshots -->
+![Rich media controls UI with Media Session](/assets/hero3.png)
 
 ## Description
 
