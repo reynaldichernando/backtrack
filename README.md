@@ -14,12 +14,12 @@ https://backtrackhq.web.app/
 ### Web app install and offline support
 ![Web app install and offline support](/assets/hero2.png)
 
-### Rich media controls UI with Media Session
+### Rich media controls and background playback
 ![Rich media controls UI with Media Session](/assets/hero3.png)
 
 ## Description
 
-BackTrack is a standalone web app that allows you to search and download videos from YouTube. It works by using the internal YouTube API to fetch video metadata and download the video files directly from YouTube. The web app is installable with support for offline playback and a rich media session UI for easy media control.
+BackTrack is a standalone web app that allows you to search and download videos from YouTube. It works by using the internal YouTube API to fetch video metadata and download the video files directly from YouTube. The web app is installable with support for offline and background playback with a rich media controls.
 
 This project was born out of a personal need for an offline YouTube video library. While project like TubeArchivist exists, it requires a server to run. Similarly, apps like NewPipe is only available for Android, leaving iOS users with limited options. BackTrack is filling this gap by providing a web app that works universally and does not require a server*.
 
