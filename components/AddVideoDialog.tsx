@@ -5,11 +5,11 @@ import { fetchVideoInfo } from "@/lib/youtube";
 import { Search, SearchIcon } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { Dialog } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { SearchResultItem } from "@/lib/model/SearchResultItem";
 import Spinner from "./ui/spinner";
 import { useToast } from "@/hooks/useToast";
+import { Drawer } from "./ui/drawer";
 
 export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Video) => void }) {
   const [searchQuery, setSearchQuery] = useState("")
@@ -70,7 +70,7 @@ export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Vid
         <SearchIcon className="mr-2 h-4 w-4" />
         Search
       </Button>
-      <Dialog isOpen={open} onClose={handleClose} title="Search">
+      <Drawer isOpen={open} onClose={handleClose} title="Search">
         <form onSubmit={handleSearch}>
           <div className="flex space-x-2 mb-4">
             <Input data-autofocus autoFocus placeholder="Type keyword or paste YouTube link" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
@@ -82,12 +82,12 @@ export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Vid
             </Button>
           </div>
         </form>
-        <div className="space-y-4 max-h-80 overflow-y-auto mt-8 pb-6 md:pb-0">
+        <div className="space-y-4 max-h-80 overflow-auto mt-8 pb-200">
           {videos.map((video) => (
             <VideoItem key={video.id} video={video} onClick={() => onAddVideo(video)} />
           ))}
         </div>
-      </Dialog>
+      </Drawer>
     </>
   )
 }
