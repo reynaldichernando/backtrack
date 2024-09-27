@@ -3,6 +3,11 @@ import { Button } from "./ui/button";
 import { Dropdown, DropdownItem } from "./ui/dropdown";
 
 export default function MyVideos({ videos, onSelectVideo, onDeleteVideo }: { videos: Video[], onSelectVideo: (video: Video) => void, onDeleteVideo: (video: Video) => void }) {
+  const handleDeleteVideo = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, video: Video) => {
+    event.stopPropagation();
+    onDeleteVideo(video);
+  }
+  
   return (
     <>
       <h2 className="text-xl font-semibold mb-4">My Videos</h2>
@@ -13,18 +18,18 @@ export default function MyVideos({ videos, onSelectVideo, onDeleteVideo }: { vid
           </div>
         )}
         {videos.map((video) => (
-          <div key={video.id} className="flex items-center justify-between w-full">
-            <div className="flex space-x-4" onClick={() => onSelectVideo(video)}>
-              <div className="relative w-24 h-12 md:w-32 md:h-16 bg-gray-200 rounded-md flex items-center justify-center">
-                <img src={video.thumbnail} alt={video.title} className="object-contain w-full h-full" />
+          <div key={video.id} className="flex items-center justify-between hover:bg-secondary p-1 rounded-md cursor-pointer w-full" onClick={() => onSelectVideo(video)}>
+            <div className="flex space-x-3 items-center">
+              <div className="relative aspect-video w-20 md:w-28 bg-gray-200 rounded-md">
+                <img src={video.thumbnail} alt={video.title} className="object-cover w-full h-full rounded-md" />
               </div>
               <div className="flex-1">
-                <p className="font-medium line-clamp-1">{video.title}</p>
-                <p className="text-sm text-gray-500">{video.author}</p>
+                <p className="font-medium text-sm line-clamp-1">{video.title}</p>
+                <p className="text-xs text-gray-500">{video.author}</p>
               </div>
             </div>
             <Dropdown>
-              <DropdownItem onClick={() => onDeleteVideo(video)}>
+              <DropdownItem onClick={(event) => handleDeleteVideo(event, video)}>
                 <Button variant="destructive">Delete</Button>
               </DropdownItem>
             </Dropdown>

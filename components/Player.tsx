@@ -111,7 +111,7 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
             </Button>
             {children}
           </div>
-          <h2 className="text-xl font-semibold mb-2">{currentVideo?.title}</h2>
+          <h2 className="text-xl font-semibold mb-2 line-clamp-1">{currentVideo?.title}</h2>
           <p className="text-gray-500">{currentVideo?.author}</p>
         </div>
         <div className="flex flex-col flex-grow justify-evenly items-center">
