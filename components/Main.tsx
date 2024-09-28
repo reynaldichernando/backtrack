@@ -183,52 +183,54 @@ export default function Main() {
 
   return (
     <>
-      <div className={`md:flex ${currentView == "detail" ? "overflow-hidden h-screen" : ""}`}>
-        <div className="md:w-1/4 p-4 space-y-2 md:overflow-auto md:border-r">
-          <div className="flex items-center space-x-2 my-3">
-            <img src="./144.png" alt="BackTrack Logo" className="w-10 h-10 rounded" />
-            <h1 className="text-2xl font-bold">BackTrack</h1>
+      <div className="overflow-auto h-screen">
+        <div className="md:flex h-screen">
+          <div className="w-full md:w-1/4 p-4 space-y-2 md:border-r">
+            <div className="flex items-center space-x-2 my-3">
+              <img src="./144.png" alt="BackTrack Logo" className="w-10 h-10 rounded" />
+              <h1 className="text-2xl font-bold">BackTrack</h1>
+            </div>
+            <AddVideoDialog onAddVideo={handleAddVideo} />
           </div>
-          <AddVideoDialog onAddVideo={handleAddVideo} />
-        </div>
-        <div className="w-full md:w-3/4 p-4 md:overflow-auto pb-28 md:h-screen">
-          <MyVideos videos={videos} onSelectVideo={handleSelectVideo} onDeleteVideo={handleDeleteVideo} />
-          <Player
-            currentVideo={currentVideo}
-            currentView={currentView}
-            isPlaying={isPlaying}
-            position={position}
-            duration={duration}
-            onBack={handlePlayerBack}
-            onTogglePlay={handleTogglePlay}
-            onClickPrevTrack={prevTrack}
-            onClickNextTrack={nextTrack}
-            updateMediaSources={updateMediaSources}
-            onSeekTo={seekTo}
-          >
-            <video
-              className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"
-              playsInline
-              autoPlay
-              poster={currentVideo?.thumbnail}
-              src={videoSrc}
-              ref={videoRef}
-            >
-              <source src={videoSrc} type="video/webm" />
-            </video>
-            <audio
-              className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"
-              autoPlay
-              src={audioSrc}
-              ref={audioRef}
-              onPlay={setHandlers}
-              onEnded={nextTrack}
-            >
-              <source src={audioSrc} type="audio/webm" />
-            </audio>
-          </Player>
+          <div className="w-full md:w-3/4 p-4 md:overflow-auto pb-36 md:pb-20">
+            <MyVideos videos={videos} onSelectVideo={handleSelectVideo} onDeleteVideo={handleDeleteVideo} />
+          </div>
         </div>
       </div>
+      <Player
+        currentVideo={currentVideo}
+        currentView={currentView}
+        isPlaying={isPlaying}
+        position={position}
+        duration={duration}
+        onBack={handlePlayerBack}
+        onTogglePlay={handleTogglePlay}
+        onClickPrevTrack={prevTrack}
+        onClickNextTrack={nextTrack}
+        updateMediaSources={updateMediaSources}
+        onSeekTo={seekTo}
+      >
+        <video
+          className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"
+          playsInline
+          autoPlay
+          poster={currentVideo?.thumbnail}
+          src={videoSrc}
+          ref={videoRef}
+        >
+          <source src={videoSrc} type="video/webm" />
+        </video>
+        <audio
+          className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"
+          autoPlay
+          src={audioSrc}
+          ref={audioRef}
+          onPlay={setHandlers}
+          onEnded={nextTrack}
+        >
+          <source src={audioSrc} type="audio/webm" />
+        </audio>
+      </Player>
       <MiniPlayer currentVideo={currentVideo} currentView={currentView} isPlaying={isPlaying} onClick={handleMiniPlayerClick} onTogglePlay={handleTogglePlay} />
     </>
   )

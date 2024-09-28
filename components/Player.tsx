@@ -124,7 +124,7 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
     >
       <VaulDrawer.Portal>
         <VaulDrawer.Overlay />
-        <VaulDrawer.Content className="fixed w-full md:w-3/4 right-0 bottom-0 top-0 focus:outline-none">
+        <VaulDrawer.Content className="fixed w-full lg:w-3/4 right-0 bottom-0 top-0 focus:outline-none">
           <div className="flex flex-col w-full h-screen bg-white border-t">
             <div className="p-4 overflow-auto h-full flex flex-col">
               <div>
