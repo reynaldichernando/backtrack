@@ -56,7 +56,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
 
   return (
     <div
-      className={`px-4 py-2 bg-white rounded shadow-xl ${toast.type === 'success'
+      className={`px-4 py-2 bg-background rounded shadow-xl ${toast.type === 'success'
         ? 'border-l-4 border-green-500'
         : toast.type === 'error'
           ? 'border-l-4 border-red-500'

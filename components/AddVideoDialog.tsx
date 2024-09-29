@@ -66,7 +66,7 @@ export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Vid
 
   return (
     <>
-      <Button className="w-full justify-start text-left font-normal rounded-2xl" variant="outline" onClick={handleOpen}>
+      <Button className="w-full justify-start text-left rounded-2xl" variant="outline" onClick={handleOpen}>
         <SearchIcon className="mr-2 h-4 w-4" />
         Search
       </Button>
@@ -74,7 +74,7 @@ export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Vid
         <form onSubmit={handleSearch}>
           <div className="flex space-x-2 mb-4">
             <Input data-autofocus autoFocus placeholder="Type keyword or paste YouTube link" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-            <Button>
+            <Button variant={"ghost"}>
               {searchLoading
                 ?
                 <Spinner className="h-4 w-4" /> :
@@ -110,12 +110,12 @@ function VideoItem({ video, onClick }: { video: Video, onClick: () => void }) {
 
   return (
     <div key={video.id} className="flex items-center space-x-2 hover:bg-secondary p-1 rounded-md cursor-pointer relative" onClick={handleClick}>
-      <div className="relative aspect-video w-20 min-w-20 md:w-28 md:min-w-28 bg-gray-200 rounded-md">
+      <div className="relative aspect-video w-20 min-w-20 md:w-28 md:min-w-28 rounded-md">
         <img src={video.thumbnail} alt={video.title} className="object-cover w-full h-full rounded-md" />
       </div>
       <div>
-        <p className="text-sm line-clamp-1">{video.title}</p>
-        <p className="text-xs text-gray-400">{video.author}</p>
+        <p className="font-bold text-sm line-clamp-1">{video.title}</p>
+        <p className="text-xs">{video.author}</p>
       </div>
       {loading &&
         <div className="absolute right-0">

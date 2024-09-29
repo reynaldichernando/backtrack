@@ -24,13 +24,13 @@ export default function MyVideos({ videos, onSelectVideo, onDeleteVideo }: { vid
                 <img src={video.thumbnail} alt={video.title} className="object-cover w-full h-full rounded-md" />
               </div>
               <div className="flex-1">
-                <p className="font-medium text-sm line-clamp-1">{video.title}</p>
-                <p className="text-xs text-gray-500">{video.author}</p>
+                <p className="font-bold text-sm line-clamp-1">{video.title}</p>
+                <p className="text-xs">{video.author}</p>
               </div>
             </div>
             <Dropdown>
               <DropdownItem onClick={(event) => handleDeleteVideo(event, video)}>
-                <Button variant="destructive">Delete</Button>
+                <Button variant="ghost" className="text-red-500">Delete</Button>
               </DropdownItem>
             </Dropdown>
           </div>

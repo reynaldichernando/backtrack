@@ -11,11 +11,11 @@ interface DrawerProps {
 
 export function Drawer({ isOpen, onClose, title, children }: DrawerProps) {
   return (
-    <VaulDrawer.Root open={isOpen} onOpenChange={onClose}>
+    <VaulDrawer.Root open={isOpen} onOpenChange={onClose} repositionInputs={false}>
       <VaulDrawer.Portal>
-        <VaulDrawer.Overlay className="fixed inset-0 bg-black/80" />
+        <VaulDrawer.Overlay className="fixed inset-0 bg-black/80 z-30" />
 
-        <VaulDrawer.Content className="fixed bottom-0 left-0 right-0 top-1/2 w-full md:max-w-lg rounded-t-xl bg-white pt-4 pl-4 pr-4 md:pb-4 shadow-xl mx-auto z-30">
+        <VaulDrawer.Content className="fixed bottom-0 left-0 right-0 w-full md:max-w-lg rounded-t-xl bg-background pt-4 pl-4 pr-4 md:pb-4 shadow-xl mx-auto z-30">
           <VaulDrawer.Title className="text-lg font-semibold leading-none tracking-tight mb-4">
             {title}
           </VaulDrawer.Title>

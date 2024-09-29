@@ -9,14 +9,13 @@ import { MediaBinaryData } from "@/lib/model/MediaBinaryData";
 import Spinner from "./ui/spinner";
 import * as Slider from '@radix-ui/react-slider';
 import { Drawer as VaulDrawer } from "vaul";
+import useInterval from "@/hooks/useInterval";
 
 const SMALL_NUMBER = 0.0001;
 
 export default function Player({ children, currentVideo, currentView, isPlaying, position, duration, onBack, onTogglePlay, onClickPrevTrack, onClickNextTrack, updateMediaSources, onSeekTo }: { children: React.ReactNode, currentVideo: Video | null, currentView: string, isPlaying: boolean, position: number, duration: number, onBack: () => void, onTogglePlay: () => void, onClickPrevTrack: () => void, onClickNextTrack: () => void, updateMediaSources: (videoSrc: string, audioSrc: string) => void, onSeekTo: (time: number) => void }) {
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [seeking, setSeeking] = useState(false);
-  const [tempPosition, setTempPosition] = useState(0);
   const [maximized, setMaximized] = useState(false);
   const [snap, setSnap] = useState<number | string | null>(SMALL_NUMBER);
 
@@ -75,27 +74,6 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
     }
   };
 
-  const handleSeekChange = (time: number) => {
-    setSeeking(true);
-    setTempPosition(time);
-  }
-
-  const handleSeekEnd = (time: number) => {
-    onSeekTo(time);
-    setTimeout(() => {
-      setSeeking(false);
-    }, 300);
-  }
-
-  const getMinuteSecondPosition = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    if (isNaN(minutes) || isNaN(seconds)) {
-      return '--:--';
-    }
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
-
   const handleToggleMaximize = () => {
     setMaximized(!maximized);
   }
@@ -121,11 +99,12 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
       activeSnapPoint={snap}
       setActiveSnapPoint={handleSnap}
       snapToSequentialPoint={true}
+      closeThreshold={0.05}
     >
       <VaulDrawer.Portal>
         <VaulDrawer.Overlay />
-        <VaulDrawer.Content className="fixed w-full lg:w-3/4 right-0 bottom-0 top-0 focus:outline-none">
-          <div className="flex flex-col w-full h-screen bg-white border-t">
+        <VaulDrawer.Content className="fixed w-full lg:w-3/4 right-0 bottom-0 top-0 focus:outline-none z-10">
+          <div className="flex flex-col w-full h-screen bg-background">
             <div className="p-4 overflow-auto h-full flex flex-col">
               <div>
                 <Button variant="ghost" className="mb-4" onClick={onBack}>
@@ -139,37 +118,19 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
                   </Button>
                   {children}
                 </div>
-                <VaulDrawer.Title className="text-xl font-semibold mb-2 line-clamp-1">{currentVideo?.title}</VaulDrawer.Title>
-                <p className="text-gray-500">{currentVideo?.author}</p>
+                <VaulDrawer.Title className="font-bold text-xl mb-2 line-clamp-1">{currentVideo?.title}</VaulDrawer.Title>
+                <p>{currentVideo?.author}</p>
               </div>
               <div className="flex flex-col flex-grow justify-evenly items-center">
-                <Slider.Root
-                  className="relative flex items-center select-none touch-none w-96 max-w-xs md:w-1/2 md:max-w-none mx-auto pt-8 pb-10"
-                  value={[seeking ? tempPosition : position]}
-                  max={duration}
-                  onValueChange={(values) => handleSeekChange(values[0])}
-                  onValueCommit={(values) => handleSeekEnd(values[0])}
-                >
-                  <Slider.Track className="bg-blue-100 relative grow rounded-full h-2">
-                    <Slider.Range className="absolute bg-blue-500 rounded-full h-full" />
-                    <div className="flex justify-between items-center mt-4">
-                      <span className="text-sm text-gray-500">{seeking ? getMinuteSecondPosition(tempPosition) : getMinuteSecondPosition(position)}</span>
-                      <span className="text-sm text-gray-500">{getMinuteSecondPosition(duration)}</span>
-                    </div>
-                  </Slider.Track>
-                  <Slider.Thumb
-                    className="block size-4 active:size-6 bg-white border shadow-md shadow-gray-400 rounded-full focus:outline-none"
-                    aria-label="Scrubber"
-                  />
-                </Slider.Root>
+                <Scrubber position={position} duration={duration} isPlaying={isPlaying} currentVideo={currentVideo} onSeekTo={onSeekTo} />
                 <div className="flex justify-center space-x-16">
-                  <Button size="icon" variant="ghost" onClick={onClickPrevTrack}>
+                  <Button size="icon" variant="ghost" onClick={onClickPrevTrack} className="transition-all duration-300 ease-in-out active:scale-75">
                     <Rewind className="size-8" fill="currentColor" />
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={onTogglePlay}>
+                  <Button size="icon" variant="ghost" onClick={onTogglePlay} className="transition-all duration-300 ease-in-out active:scale-75">
                     {loading ? <Spinner className="size-8" /> : isPlaying ? <Pause className="size-8" fill="currentColor" /> : <Play className="size-8" fill="currentColor" />}
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={onClickNextTrack}>
+                  <Button size="icon" variant="ghost" onClick={onClickNextTrack} className="transition-all duration-300 ease-in-out active:scale-75">
                     <FastForward className="size-8" fill="currentColor" />
                   </Button>
                 </div>
@@ -180,4 +141,60 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
       </VaulDrawer.Portal>
     </VaulDrawer.Root>
   );
+}
+
+function Scrubber({ position, duration, isPlaying, currentVideo, onSeekTo }: { position: number, duration: number, isPlaying: boolean, currentVideo: Video | null, onSeekTo: (time: number) => void }) {
+  const [seeking, setSeeking] = useState(false);
+  const [tempPosition, setTempPosition] = useState(0);
+  const [currentPosition, setCurrentPosition] = useState(position);
+  
+  useEffect(() => {
+    setCurrentPosition(position);
+  }, [currentVideo, position]);
+
+  useInterval(() => {
+    if (!isPlaying || seeking) { return; }
+    setCurrentPosition(currentPosition + 0.3);
+  }, 300);
+
+  const getMinuteSecondPosition = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    if (isNaN(minutes) || isNaN(seconds)) {
+      return '--:--';
+    }
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  const handleSeekChange = (time: number) => {
+    setSeeking(true);
+    setTempPosition(time);
+  }
+
+  const handleSeekEnd = (time: number) => {
+    onSeekTo(time);
+    setCurrentPosition(time);
+    setTimeout(() => {
+      setSeeking(false);
+    }, 500);
+  }
+
+  return (
+    <Slider.Root
+      className="relative flex items-center select-none touch-none w-96 max-w-xs md:w-1/2 md:max-w-none mx-auto py-2 mt-2 mb-8"
+      value={[seeking ? tempPosition : currentPosition]}
+      max={duration}
+      onValueChange={(values) => handleSeekChange(values[0])}
+      onValueCommit={(values) => handleSeekEnd(values[0])}
+    >
+      <Slider.Track className="bg-secondary relative grow rounded-full h-2">
+        <Slider.Range className="absolute bg-foreground rounded-full h-full" />
+        <div className="flex justify-between items-center mt-4">
+          <span className="text-sm text-gray-500">{seeking ? getMinuteSecondPosition(tempPosition) : getMinuteSecondPosition(currentPosition)}</span>
+          <span className="text-sm text-gray-500">{getMinuteSecondPosition(duration)}</span>
+        </div>
+      </Slider.Track>
+      <Slider.Thumb />
+    </Slider.Root>
+  )
 }

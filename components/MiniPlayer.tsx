@@ -13,19 +13,19 @@ export default function MiniPlayer({ currentVideo, currentView, isPlaying, onCli
   }
 
   return (
-    <div id="mini-player" className={`border-t cursor-pointer p-4 flex items-center justify-between bg-white fixed bottom-0 left-0 right-0 transition-transform duration-300 ease-out ${currentView == "detail" ? "transform translate-y-full" : "transform translate-y-0"}`} onClick={onClick}>
+    <div id="mini-player" className={`border-t-4 border-secondary cursor-pointer p-4 flex items-center justify-between bg-background z-20 fixed bottom-0 left-0 right-0 transition-transform duration-300 ease-out ${currentView == "detail" ? "transform translate-y-full" : "transform translate-y-0"}`} onClick={onClick}>
       <div className="flex items-center space-x-2">
         <div className="aspect-square w-10 min-w-10">
           <img src={currentVideo?.thumbnail} alt={currentVideo?.title} className="object-cover w-full h-full rounded-md" />
         </div>
         <div>
-          <p className="font-medium text-sm line-clamp-1">{currentVideo?.title || 'No video selected.'}</p>
-          <p className="text-xs text-gray-500">{currentVideo?.author || '-'}</p>
+          <p className="font-bold text-sm line-clamp-1">{currentVideo?.title || 'No video selected.'}</p>
+          <p className="text-xs">{currentVideo?.author || '-'}</p>
         </div>
       </div>
       {currentVideo && (
         <div>
-          <Button size="icon" variant="ghost" onClick={handleTogglePlay}>
+          <Button size="icon" variant="ghost" onClick={handleTogglePlay} className="transition-all duration-300 ease-in-out active:scale-75">
             {isPlaying ? <Pause className="h-6 w-6" fill="currentColor" /> : <Play className="h-6 w-6" fill="currentColor" />}
           </Button>
         </div>

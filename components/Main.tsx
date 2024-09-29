@@ -2,7 +2,7 @@ import { useToast } from "@/hooks/useToast";
 import { getAllVideos, addVideo, deleteVideo, deleteMediaBinary } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
 import { generateThumbnailUrl } from "@/lib/utils";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, SyntheticEvent } from "react";
 import AddVideoDialog from "./AddVideoDialog";
 import MiniPlayer from "./MiniPlayer";
 import Player from "./Player";
@@ -45,9 +45,6 @@ export default function Main() {
         } else if (!audioRef.current.paused && videoRef.current.paused) {
           videoRef.current.play();
         }
-
-        setPosition(videoRef.current.currentTime);
-        setDuration(videoRef.current.duration);
 
         navigator.mediaSession.setPositionState({ duration: audioRef.current.duration, position: audioRef.current.currentTime });
       } catch (error) {
@@ -98,7 +95,7 @@ export default function Main() {
     setCurrentView("detail");
   }
 
-  const setHandlers = () => {
+  const setHandlers = (event: SyntheticEvent<HTMLAudioElement>) => {
     if (!currentVideo) { return; }
     const playingVideo = videos.find((video) => video.id === currentVideo.id);
     if (!playingVideo) { return; }
@@ -111,6 +108,8 @@ export default function Main() {
     navigator.mediaSession.setActionHandler('seekto', (details: MediaSessionActionDetails) => seekTo(details.seekTime ?? 0));
     navigator.mediaSession.playbackState = "playing";
     setIsPlaying(true);
+    setPosition(0);
+    setDuration(event.currentTarget.duration);
   }
 
   const playTrack = () => {
@@ -164,8 +163,6 @@ export default function Main() {
 
     audioRef.current.currentTime = time;
     videoRef.current.currentTime = time;
-
-    playTrack();
   }
 
   const handleTogglePlay = () => {
@@ -185,7 +182,7 @@ export default function Main() {
     <>
       <div className="overflow-auto h-screen">
         <div className="md:flex h-screen">
-          <div className="w-full md:w-1/4 p-4 space-y-2 md:border-r">
+          <div className="w-full md:w-1/4 p-4 space-y-2 md:border-r-2 border-secondary">
             <div className="flex items-center space-x-2 my-3">
               <img src="./144.png" alt="BackTrack Logo" className="w-10 h-10 rounded" />
               <h1 className="text-2xl font-bold">BackTrack</h1>
@@ -211,7 +208,7 @@ export default function Main() {
         onSeekTo={seekTo}
       >
         <video
-          className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"
+          className="aspect-video w-full bg-secondary rounded-lg mb-4 flex items-center justify-center"
           playsInline
           autoPlay
           poster={currentVideo?.thumbnail}
@@ -221,7 +218,7 @@ export default function Main() {
           <source src={videoSrc} type="video/webm" />
         </video>
         <audio
-          className="aspect-video w-full bg-gray-200 rounded-lg mb-4 flex items-center justify-center"
+          className="aspect-video w-full rounded-lg mb-4 flex items-center justify-center"
           autoPlay
           src={audioSrc}
           ref={audioRef}
