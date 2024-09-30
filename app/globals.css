@@ -8,17 +8,19 @@
     --foreground: 65 65 65;
     --secondary: 225 225 225;
   }
-
-  .dark {
-    --background: 24 24 24;
-    --foreground: 190 190 190;
-    --secondary: 30 30 30;
-  }
 }
 
 @layer base {
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 24 24 24;
+    --foreground: 190 190 190;
+    --secondary: 30 30 30;
   }
 }
 

@@ -74,7 +74,7 @@ export default function AddVideoDialog({ onAddVideo }: { onAddVideo: (video: Vid
         <form onSubmit={handleSearch}>
           <div className="flex space-x-2 mb-4">
             <Input data-autofocus autoFocus placeholder="Type keyword or paste YouTube link" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-            <Button variant={"ghost"}>
+            <Button variant={"outline"}>
               {searchLoading
                 ?
                 <Spinner className="h-4 w-4" /> :
