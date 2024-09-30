@@ -106,7 +106,6 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
     <VaulDrawer.Root
       open={open}
       onOpenChange={onBack}
-      shouldScaleBackground
     >
       <VaulDrawer.Portal>
         <VaulDrawer.Overlay />
@@ -118,19 +117,19 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
                   <div className="rounded-xl h-1 bg-foreground/50"></div>
                 </div>
               </div>
-              <div className={`p-4 ${maximized ? "md:w-full" : "md:w-2/3 mx-auto"}`}>
-                <div className="relative">
-                  <Button variant="ghost" className="mb-4 absolute top-2 right-2 z-10" onClick={handleToggleMaximize}>
-                    {maximized ? <Minimize className="h-4 w-4 text-gray-500" /> : <Maximize className="h-4 w-4 text-gray-500" />}
-                  </Button>
-                  {children}
-                </div>
-                <VaulDrawer.Title className="font-bold text-xl mb-2 line-clamp-1">{currentVideo?.title}</VaulDrawer.Title>
-                <p>{currentVideo?.author}</p>
-              </div>
               <div className="flex flex-col flex-grow justify-evenly items-center">
+                <div className={`p-4 ${maximized ? "md:w-full" : "md:w-2/3 mx-auto"}`}>
+                  <div className="relative">
+                    <Button variant="ghost" className="mb-4 absolute top-2 right-2 z-10" onClick={handleToggleMaximize}>
+                      {maximized ? <Minimize className="h-4 w-4 text-gray-500" /> : <Maximize className="h-4 w-4 text-gray-500" />}
+                    </Button>
+                    {children}
+                  </div>
+                  <VaulDrawer.Title className="font-bold text-xl my-4 line-clamp-1">{currentVideo?.title}</VaulDrawer.Title>
+                  <p>{currentVideo?.author}</p>
+                </div>
                 <Slider.Root
-                  className="relative flex items-center select-none touch-none w-96 max-w-xs md:w-1/2 md:max-w-none mx-auto py-2 mt-2 mb-8"
+                  className="relative flex items-center select-none touch-none w-96 max-w-xs md:w-1/2 md:max-w-none mx-auto py-2 mb-12"
                   value={[seeking ? tempPosition : position]}
                   max={duration}
                   onValueChange={(values) => handleSeekChange(values[0])}
@@ -145,7 +144,7 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
                   </Slider.Track>
                   <Slider.Thumb />
                 </Slider.Root>
-                <div className="flex justify-center space-x-16">
+                <div className="flex justify-center space-x-16 mb-8">
                   <Button size="icon" variant="ghost" onClick={onClickPrevTrack} className="transition-all duration-300 ease-in-out active:scale-75">
                     <Rewind className="size-8" fill="currentColor" />
                   </Button>

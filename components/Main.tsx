@@ -192,18 +192,18 @@ export default function Main() {
 
   return (
     <>
-      <div className="md:flex md:items-start">
+      <main className="flex flex-col md:flex-row md:items-start min-h-screen-safe mt-safe ml-safe mr-safe">
         <div className="md:sticky top-0 left-0 w-full md:w-1/4 p-4 space-y-2">
           <div className="flex items-center space-x-2 my-3">
-            <img src="./144.png" alt="BackTrack Logo" className="w-10 h-10 rounded" />
+            <img src="./144.png" alt="BackTrack Logo" className="size-8 rounded" />
             <h1 className="text-2xl font-bold">BackTrack</h1>
           </div>
           <AddVideoDialog onAddVideo={handleAddVideo} />
         </div>
-        <div className="w-full md:w-3/4 p-4 pb-20 md:border-l-2 border-secondary">
+        <div className="w-full md:w-3/4 p-4 pb-20 md:border-l-2 border-secondary flex-grow self-stretch">
           <MyVideos videos={videos} onSelectVideo={handleSelectVideo} onDeleteVideo={handleDeleteVideo} />
         </div>
-      </div>
+      </main>
       <Player
         currentVideo={currentVideo}
         currentView={currentView}
@@ -218,7 +218,7 @@ export default function Main() {
         onSeekTo={seekTo}
       >
         <video
-          className="aspect-video w-full bg-secondary rounded-lg mb-4 flex items-center justify-center"
+          className="aspect-video w-full bg-secondary rounded-lg"
           playsInline
           autoPlay
           poster={currentVideo?.thumbnail}
@@ -229,15 +229,12 @@ export default function Main() {
         </video>
       </Player>
       <audio
-        className="aspect-video w-full rounded-lg mb-4 flex items-center justify-center"
         autoPlay
         src={audioSrc}
         ref={audioRef}
         onPlay={setHandlers}
         onEnded={nextTrack}
-      >
-        <source src={audioSrc} type="audio/webm" />
-      </audio>
+      />
       <MiniPlayer currentVideo={currentVideo} currentView={currentView} isPlaying={isPlaying} onClick={handleMiniPlayerClick} onTogglePlay={handleTogglePlay} />
     </>
   )
