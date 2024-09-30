@@ -46,6 +46,9 @@ export default function Main() {
           videoRef.current.play();
         }
 
+        setPosition(videoRef.current.currentTime);
+        setDuration(videoRef.current.duration);
+
         navigator.mediaSession.setPositionState({ duration: audioRef.current.duration, position: audioRef.current.currentTime });
       } catch (error) {
       }
@@ -113,17 +116,26 @@ export default function Main() {
   }
 
   const playTrack = () => {
-    if (!videoRef.current || !audioRef.current) { return; }
-    videoRef.current.play();
-    audioRef.current.play();
+    if (videoRef.current) {
+      videoRef.current.play();
+    }
+
+    if (audioRef.current) {
+      audioRef.current.play();
+    }
+
     navigator.mediaSession.playbackState = "playing";
     setIsPlaying(true);
   };
 
   const pauseTrack = () => {
-    if (!videoRef.current || !audioRef.current) { return; }
-    videoRef.current.pause();
-    audioRef.current.pause();
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
     navigator.mediaSession.playbackState = "paused";
     setIsPlaying(false);
   };
@@ -180,18 +192,16 @@ export default function Main() {
 
   return (
     <>
-      <div className="overflow-auto h-screen">
-        <div className="md:flex h-screen">
-          <div className="w-full md:w-1/4 p-4 space-y-2 md:border-r-2 border-secondary">
-            <div className="flex items-center space-x-2 my-3">
-              <img src="./144.png" alt="BackTrack Logo" className="w-10 h-10 rounded" />
-              <h1 className="text-2xl font-bold">BackTrack</h1>
-            </div>
-            <AddVideoDialog onAddVideo={handleAddVideo} />
+      <div className="md:flex md:items-start">
+        <div className="md:sticky top-0 left-0 w-full md:w-1/4 p-4 space-y-2">
+          <div className="flex items-center space-x-2 my-3">
+            <img src="./144.png" alt="BackTrack Logo" className="w-10 h-10 rounded" />
+            <h1 className="text-2xl font-bold">BackTrack</h1>
           </div>
-          <div className="w-full md:w-3/4 p-4 md:overflow-auto pb-36 md:pb-20">
-            <MyVideos videos={videos} onSelectVideo={handleSelectVideo} onDeleteVideo={handleDeleteVideo} />
-          </div>
+          <AddVideoDialog onAddVideo={handleAddVideo} />
+        </div>
+        <div className="w-full md:w-3/4 p-4 pb-20 md:border-l-2 border-secondary">
+          <MyVideos videos={videos} onSelectVideo={handleSelectVideo} onDeleteVideo={handleDeleteVideo} />
         </div>
       </div>
       <Player
@@ -217,17 +227,17 @@ export default function Main() {
         >
           <source src={videoSrc} type="video/webm" />
         </video>
-        <audio
-          className="aspect-video w-full rounded-lg mb-4 flex items-center justify-center"
-          autoPlay
-          src={audioSrc}
-          ref={audioRef}
-          onPlay={setHandlers}
-          onEnded={nextTrack}
-        >
-          <source src={audioSrc} type="audio/webm" />
-        </audio>
       </Player>
+      <audio
+        className="aspect-video w-full rounded-lg mb-4 flex items-center justify-center"
+        autoPlay
+        src={audioSrc}
+        ref={audioRef}
+        onPlay={setHandlers}
+        onEnded={nextTrack}
+      >
+        <source src={audioSrc} type="audio/webm" />
+      </audio>
       <MiniPlayer currentVideo={currentVideo} currentView={currentView} isPlaying={isPlaying} onClick={handleMiniPlayerClick} onTogglePlay={handleTogglePlay} />
     </>
   )
