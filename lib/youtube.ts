@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { corsFetch } from "./utils";
 
 export interface FormatInfo {
   url: string;
@@ -26,7 +27,7 @@ export interface VideoInfo {
 
 export async function fetchVideoInfoRaw(videoId: string): Promise<unknown> {
   // prettier-ignore
-  const res = await fetch("https://app.backtrackhq.workers.dev/?https://www.youtube.com/youtubei/v1/player", {
+  const res = await corsFetch("https://www.youtube.com/youtubei/v1/player", {
     method: "POST",
     body: JSON.stringify({
       videoId,
@@ -44,7 +45,7 @@ export async function fetchVideoInfoRaw(videoId: string): Promise<unknown> {
       "content-type": "application/json",
       "X-YouTube-Client-Name": "3",
       "X-YouTube-Client-Version": "18.11.34",
-      "x-cors-headers": JSON.stringify({
+      "x-corsfix-headers": JSON.stringify({
         "user-agent": "com.google.android.youtube/18.11.34 (Linux; U; Android 11) gzip",
         "origin": "https://www.youtube.com",
       }),
@@ -103,19 +104,27 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoInfo> {
         : "none",
       width: f.width ?? null,
       height: f.height ?? null,
-      quality: f.quality ?? null
+      quality: f.quality ?? null,
     })),
   };
 }
 
-export async function downloadMedia(id: string, type: string, quality: string = "medium"): Promise<ArrayBuffer | null> {
+export async function downloadMedia(
+  id: string,
+  type: string,
+  quality: string = "medium"
+): Promise<ArrayBuffer | null> {
   const videoInfo = await fetchVideoInfo(id);
   let formats = videoInfo.formats;
 
   if (type == "video") {
-    formats = videoInfo.formats.filter((f) => f.ext === "webm" && f.vcodec !== "none" && f.quality === quality);
+    formats = videoInfo.formats.filter(
+      (f) => f.ext === "webm" && f.vcodec !== "none" && f.quality === quality
+    );
   } else if (type == "audio") {
-    formats = videoInfo.formats.filter((f) => f.ext === "webm" && f.acodec !== "none").sort((a, b) => b.filesize! - a.filesize!);
+    formats = videoInfo.formats
+      .filter((f) => f.ext === "webm" && f.acodec !== "none")
+      .sort((a, b) => b.filesize! - a.filesize!);
   }
 
   if (formats.length === 0) {
@@ -135,7 +144,7 @@ export async function downloadMedia(id: string, type: string, quality: string = 
     const end = Math.min(start + CHUNK_SIZE, format.filesize);
     const range = `bytes=${start}-${end - 1}`;
 
-    const downloadPromise = fetch(`https://app.backtrackhq.workers.dev/?${format.url}`, {
+    const downloadPromise = corsFetch(format.url, {
       headers: {
         range: range,
       },
@@ -144,7 +153,9 @@ export async function downloadMedia(id: string, type: string, quality: string = 
   }
 
   const responses = await Promise.all(downloadPromises);
-  const downloadedChunks = await Promise.all(responses.map(res => res.arrayBuffer()));
+  const downloadedChunks = await Promise.all(
+    responses.map((res) => res.arrayBuffer())
+  );
 
   return new Blob(downloadedChunks).arrayBuffer();
 }

@@ -1,7 +1,7 @@
 import { SearchResultItem } from "./model/SearchResultItem";
+import { corsFetch } from "./utils";
 
-type SearchData = { query: string, next?: string };
-type RequestFunction = (urlString: string, options?: RequestOptions) => Promise<string>;
+type SearchData = { query: string; next?: string };
 
 interface RawSearchResultItem {
   content: string;
@@ -21,12 +21,6 @@ interface SearchResult {
   next?: string | number;
 }
 
-interface RequestOptions {
-  method?: string;
-  headers?: { [key: string]: string };
-  body?: string;
-}
-
 interface JSResponse {
   url: string;
   path: string;
@@ -35,7 +29,7 @@ interface JSResponse {
 
 function randomIpV4(): string {
   return `${Math.floor(Math.random() * 255)}.${Math.floor(
-    Math.random() * 255,
+    Math.random() * 255
   )}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
 }
 
@@ -54,41 +48,22 @@ function randomIPv6(): string {
   return ipv6;
 }
 
-const requestBrowser: RequestFunction = (urlString, options = {}) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      new URL(urlString);
-      try {
-        const res = await fetch(urlString, {
-          ...options,
-          headers: {
-            ...options.headers,
-            "X-Forwarded-For": [randomIpV4(), randomIPv6()][
-              Math.floor(Math.random() * 2)
-            ],
-          },
-        });
-        try {
-          resolve(await res.text());
-        } catch (err) {
-          reject(new Error(`Error parsing response from ${urlString}`));
-        }
-      } catch (err) {
-        reject(new Error(`Request for ${urlString} failed`));
-      }
-    } catch (err) {
-      reject(err);
-    }
-  });
-};
-
-const request: RequestFunction = requestBrowser;
-
 async function getJS(query: string): Promise<JSResponse> {
-  const html = await request(`https://app.backtrackhq.workers.dev/?https://duckduckgo.com/?q=${encodeURIComponent(query)}`);
-  const urlMatch = html.match(/"(https:\/\/links\.duckduckgo\.com\/d\.js[^">]+)">/);
+  // const html = await request(corsProxy(`https://duckduckgo.com/?q=${encodeURIComponent(query)}`));
+  const html = await (
+    await corsFetch(`https://duckduckgo.com/?q=${encodeURIComponent(query)}`, {
+      headers: {
+        "X-Forwarded-For": [randomIpV4(), randomIPv6()][
+          Math.floor(Math.random() * 2)
+        ],
+      },
+    })
+  ).text();
+  const urlMatch = html.match(
+    /"(https:\/\/links\.duckduckgo\.com\/d\.js[^">]+)">/
+  );
   if (!urlMatch) {
-    throw new Error('URL not found in the HTML response');
+    throw new Error("URL not found in the HTML response");
   }
 
   const url = urlMatch[1];
@@ -96,7 +71,7 @@ async function getJS(query: string): Promise<JSResponse> {
   const vqdMatch = url.match(/vqd=([^&]+)/);
 
   if (!pathMatch || !vqdMatch) {
-    throw new Error('Unable to extract path or vqd from the URL');
+    throw new Error("Unable to extract path or vqd from the URL");
   }
 
   return {
@@ -104,27 +79,49 @@ async function getJS(query: string): Promise<JSResponse> {
     path: pathMatch[0],
     vqd: vqdMatch[1],
   };
-};
+}
 
 /**
  *
  * @param {SearchData} data
  * @param {SearchType} type
- * @param {boolean} all
  * @returns {Promise<SearchResult>}
  */
-export const search = async (data: SearchData, all: boolean = false): Promise<SearchResult> => {
+export const search = async (data: SearchData): Promise<SearchResult> => {
   try {
-    const apiURL = data.next && typeof data.next === 'string'
-      ? { path: data.next, vqd: new URLSearchParams(data.next).get('vqd')! }
-      : await getJS(data.query);
+    const apiURL =
+      data.next && typeof data.next === "string"
+        ? { path: data.next, vqd: new URLSearchParams(data.next).get("vqd")! }
+        : await getJS(data.query);
 
     return await mediaSearch(
-      data.next ? data.next : `/v.js?q=${encodeURIComponent(data.query)}&o=json&s=0&u=bing&l=us-en&vqd=${apiURL.vqd}&p=-1`,
-      ({ content: url, title, description, duration, images, embed_url, published, publisher, uploader }: RawSearchResultItem) => ({
-        url, title, description, duration, images, embed_url, published, publisher, uploader
-      } as SearchResultItem),
-      all,
+      data.next
+        ? data.next
+        : `/v.js?q=${encodeURIComponent(
+            data.query
+          )}&o=json&s=0&u=bing&l=us-en&vqd=${apiURL.vqd}&p=-1`,
+      ({
+        content: url,
+        title,
+        description,
+        duration,
+        images,
+        embed_url,
+        published,
+        publisher,
+        uploader,
+      }: RawSearchResultItem) =>
+        ({
+          url,
+          title,
+          description,
+          duration,
+          images,
+          embed_url,
+          published,
+          publisher,
+          uploader,
+        } as SearchResultItem)
     );
   } catch (err) {
     throw err;
@@ -136,44 +133,36 @@ export const search = async (data: SearchData, all: boolean = false): Promise<Se
  *
  * @param {string} path
  * @param {(item: RawSearchResultItem) => SearchResultItem} parser
- * @param {boolean} fetchAll
  * @returns {Promise<{results: SearchResultItem[], hasNext?: boolean, next?: string}>} The search results.
  */
 async function mediaSearch(
   path: string,
-  parser: (item: RawSearchResultItem) => SearchResultItem,
-  fetchAll: boolean = false,
-): Promise<{ results: SearchResultItem[], hasNext?: boolean, next?: string }> {
-  const url = new URL(`https://app.backtrackhq.workers.dev/?https://duckduckgo.com${path}`);
+  parser: (item: RawSearchResultItem) => SearchResultItem
+): Promise<{ results: SearchResultItem[]; hasNext?: boolean; next?: string }> {
   try {
-    const res = await request(url.href);
-    let results, next;
+    const res = await (
+      await corsFetch(`https://duckduckgo.com${path}`, {
+        headers: {
+          "X-Forwarded-For": [randomIpV4(), randomIPv6()][
+            Math.floor(Math.random() * 2)
+          ],
+        },
+      })
+    ).text();
+    let results;
 
     try {
       const parsed = JSON.parse(res);
-      const nextCursor = new URLSearchParams(parsed.next).get('s');
-      const nextVqd = parsed.vqd[parsed.queryEncoded];
       results = parsed.results;
-      url.searchParams.set('s', nextCursor!);
-      url.searchParams.set('vqd', nextVqd!);
-      next = `${url.pathname}?${url.searchParams.toString()}`;
     } catch (err) {
-      throw new Error(`Failed parsing from DDG response https://duckduckgo.com${path}`);
+      throw new Error(
+        `Failed parsing from DDG response https://duckduckgo.com${path}`
+      );
     }
 
     const data = results.map(parser);
-    if (fetchAll && next) {
-      return {
-        results: [
-          ...data,
-          ...(await mediaSearch(`/${next}`, parser, fetchAll)).results,
-        ],
-      };
-    }
 
-    return fetchAll
-      ? { results: data }
-      : { results: data, hasNext: Boolean(next), next: next || undefined };
+    return { results: data };
   } catch (err) {
     throw err;
   }

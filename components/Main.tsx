@@ -1,7 +1,7 @@
 import { useToast } from "@/hooks/useToast";
 import { getAllVideos, addVideo, deleteVideo, deleteMediaBinary } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
-import { generateThumbnailUrl } from "@/lib/utils";
+import { corsFetch, generateThumbnailUrl } from "@/lib/utils";
 import { useState, useRef, useEffect, SyntheticEvent } from "react";
 import AddVideoDialog from "./AddVideoDialog";
 import MiniPlayer from "./MiniPlayer";
@@ -70,7 +70,7 @@ export default function Main() {
   }
 
   const handleAddVideo = async (video: Video) => {
-    const thumbnailResponse = await fetch(`https://app.backtrackhq.workers.dev/?${generateThumbnailUrl(video.id)}`);
+    const thumbnailResponse = await corsFetch(generateThumbnailUrl(video.id));
     const thumbnailBuffer = thumbnailResponse.status === 404 ? await (await fetch(video.thumbnail)).arrayBuffer() : await thumbnailResponse.arrayBuffer();
     const thumbnailBase64 = Buffer.from(thumbnailBuffer).toString('base64');
 

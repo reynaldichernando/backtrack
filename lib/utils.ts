@@ -1,5 +1,5 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 /**
  * Combines multiple class names into a single string and merges Tailwind CSS classes.
@@ -8,7 +8,7 @@ import { twMerge } from "tailwind-merge"
  * @returns {string} - The merged class names.
  */
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -18,9 +18,10 @@ export function cn(...inputs: ClassValue[]) {
  * @returns {string | null} - The extracted video ID or null if the video ID cannot be found.
  */
 export function extractVideoId(url: string): string | null {
-  const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-  const match = url.match(regex)
-  return match ? match[1] : null
+  const regex =
+    /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
 }
 
 /**
@@ -31,7 +32,7 @@ export function extractVideoId(url: string): string | null {
  */
 export function generateThumbnailUrl(videoId: string | null): string {
   if (!videoId) {
-    return '';
+    return "";
   }
   return `https://i.ytimg.com/vi_webp/${videoId}/maxresdefault.webp`;
 }
@@ -43,6 +44,27 @@ export function generateThumbnailUrl(videoId: string | null): string {
  * @returns {boolean} - Whether the URL is a YouTube URL or not.
  */
 export function isYoutubeUrl(url: string): boolean {
-  const regex = /^https?:\/\/(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w\-\_]*)(&(amp;)?‌​[\w\?‌​=]*)?/;
+  const regex =
+    /^https?:\/\/(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w\-\_]*)(&(amp;)?‌​[\w\?‌​=]*)?/;
   return regex.test(url);
+}
+
+/**
+ * Returns a CORS proxy URL for the given URL.
+ *
+ * @param {string} url - The URL to proxy.
+ * @returns {string} - The CORS proxy URL.
+ */
+export function corsProxy(url: string): string {
+  return `https://proxy.corsfix.com/?${url}`;
+}
+
+export function corsFetch(url: string, init?: RequestInit): Promise<Response> {
+  return fetch(corsProxy(url), {
+    ...init,
+    headers: {
+      ...init?.headers,
+      "x-corsfix-key": "75c93250-fd65-49f7-92aa-aeeb26c1290b",
+    },
+  });
 }
