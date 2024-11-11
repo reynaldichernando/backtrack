@@ -45,7 +45,7 @@ export async function fetchVideoInfoRaw(videoId: string): Promise<unknown> {
       "content-type": "application/json",
       "X-YouTube-Client-Name": "3",
       "X-YouTube-Client-Version": "18.11.34",
-      "x-corsfix-headers": JSON.stringify({
+      "x-cors-headers": JSON.stringify({
         "user-agent": "com.google.android.youtube/18.11.34 (Linux; U; Android 11) gzip",
         "origin": "https://www.youtube.com",
       }),
