@@ -56,7 +56,7 @@ export function isYoutubeUrl(url: string): boolean {
  * @returns {string} - The CORS proxy URL.
  */
 export function corsProxy(url: string): string {
-  return `https://app.backtrackhq.workers.dev/?${url}`;
+  return `https://proxy.corsfix.com/?${url}`;
 }
 
 export function corsFetch(url: string, init?: RequestInit): Promise<Response> {
@@ -64,6 +64,7 @@ export function corsFetch(url: string, init?: RequestInit): Promise<Response> {
     ...init,
     headers: {
       ...init?.headers,
+      "x-corsfix-key": "75c93250-fd65-49f7-92aa-aeeb26c1290b",
     },
   });
 }
