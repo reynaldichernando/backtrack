@@ -109,6 +109,22 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoInfo> {
   };
 }
 
+async function downloadChunk(url: string, range: string, retries = 3): Promise<ArrayBuffer> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await corsFetch(url, {
+        headers: { range },
+      });
+      return await response.arrayBuffer();
+    } catch (error) {
+      if (attempt === retries - 1) throw error;
+      // Wait a bit before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+    }
+  }
+  throw new Error("Failed to download chunk after all retries");
+}
+
 export async function downloadMedia(
   id: string,
   type: string,
@@ -137,25 +153,26 @@ export async function downloadMedia(
     return null;
   }
 
-  const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
-  const downloadPromises: Promise<Response>[] = [];
+  const CHUNK_SIZE = 5 * 1024 * 1024;
+  const downloadPromises: Promise<ArrayBuffer>[] = [];
 
   for (let start = 0; start < format.filesize; start += CHUNK_SIZE) {
     const end = Math.min(start + CHUNK_SIZE, format.filesize);
     const range = `bytes=${start}-${end - 1}`;
 
-    const downloadPromise = corsFetch(format.url, {
-      headers: {
-        range: range,
-      },
-    });
-    downloadPromises.push(downloadPromise);
+    downloadPromises.push(
+      downloadChunk(format.url, range).catch(error => {
+        console.error(`Failed to download chunk ${start}-${end}:`, error);
+        throw error; // Re-throw to trigger the catch block below
+      })
+    );
   }
 
-  const responses = await Promise.all(downloadPromises);
-  const downloadedChunks = await Promise.all(
-    responses.map((res) => res.arrayBuffer())
-  );
-
-  return new Blob(downloadedChunks).arrayBuffer();
+  try {
+    const chunks = await Promise.all(downloadPromises);
+    return new Blob(chunks).arrayBuffer();
+  } catch (error) {
+    console.error('Download failed:', error);
+    return null;
+  }
 }
