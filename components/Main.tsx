@@ -1,4 +1,3 @@
-import { useToast } from "@/hooks/useToast";
 import { getAllVideos, addVideo, deleteVideo, deleteMediaBinary } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
 import { corsFetch, generateThumbnailUrl } from "@/lib/utils";
@@ -7,6 +6,7 @@ import AddVideoDialog from "./AddVideoDialog";
 import MiniPlayer from "./MiniPlayer";
 import Player from "./Player";
 import MyVideos from "./MyVideos";
+import { toast } from "sonner";
 
 export default function Main() {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -22,8 +22,6 @@ export default function Main() {
 
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
-
-  const { addToast } = useToast();
 
   useEffect(() => {
     loadVideos();
@@ -79,14 +77,14 @@ export default function Main() {
       thumbnail: `data:image/jpeg;base64,${thumbnailBase64}`
     });
 
-    addToast('Video added successfully', 'success');
+    toast('Video added successfully');
     await loadVideos();
   }
 
   const handleDeleteVideo = async (video: Video) => {
     await deleteVideo(video.id);
     await deleteMediaBinary(video.id);
-    addToast('Video deleted successfully', 'success');
+    toast('Video deleted successfully');
     loadVideos();
   }
 

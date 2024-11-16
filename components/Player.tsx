@@ -4,16 +4,14 @@ import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { FastForward, Maximize, Minimize, Pause, Play, Rewind } from "lucide-react";
 import { downloadMedia } from "@/lib/youtube";
-import { useToast } from "../hooks/useToast";
 import { MediaBinaryData } from "@/lib/model/MediaBinaryData";
 import Spinner from "./ui/spinner";
 import * as Slider from '@radix-ui/react-slider';
-import { Drawer as VaulDrawer } from "vaul";
+import { toast } from "sonner";
+import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal, DrawerTitle } from "./ui/drawer";
 
 export default function Player({ children, currentVideo, currentView, isPlaying, position, duration, onBack, onTogglePlay, onClickPrevTrack, onClickNextTrack, updateMediaSources, onSeekTo }: { children: React.ReactNode, currentVideo: Video | null, currentView: string, isPlaying: boolean, position: number, duration: number, onBack: () => void, onTogglePlay: () => void, onClickPrevTrack: () => void, onClickNextTrack: () => void, updateMediaSources: (videoSrc: string, audioSrc: string) => void, onSeekTo: (time: number) => void }) {
-  const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [maximized, setMaximized] = useState(false);
   const [open, setOpen] = useState(false);
   const [seeking, setSeeking] = useState(false);
   const [tempPosition, setTempPosition] = useState(0);
@@ -42,7 +40,7 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
 
       updateMediaSources(videoUrl, audioUrl);
     } else {
-      addToast('Downloading video...', 'info');
+      toast('Downloading video...');
       setLoading(true);
 
       try {
@@ -52,7 +50,7 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
         if (!videoBuffer || !audioBuffer) {
           setLoading(false);
           updateMediaSources('', '');
-          addToast('Failed to download video', 'error');
+          toast('Failed to download video');
           return
         }
 
@@ -65,21 +63,17 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
         const audioUrl = URL.createObjectURL(audioBlob);
 
         updateMediaSources(videoUrl, audioUrl);
-        addToast('Video saved successfully', 'success');
+        toast('Video saved successfully');
       } catch (error) {
         setLoading(false);
         updateMediaSources('', '');
-        addToast('Failed to download video', 'error');
+        toast('Failed to download video');
         console.error(error);
       } finally {
         setLoading(false);
       }
     }
   };
-
-  const handleToggleMaximize = () => {
-    setMaximized(!maximized);
-  }
 
   const getMinuteSecondPosition = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -103,29 +97,20 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
   }
 
   return (
-    <VaulDrawer.Root
+    <Drawer
       open={open}
       onOpenChange={onBack}
     >
-      <VaulDrawer.Portal>
-        <VaulDrawer.Overlay />
-        <VaulDrawer.Content className="fixed w-full right-0 bottom-0 top-0 focus:outline-none z-20 px-safe">
-          <div className="flex flex-col w-full h-screen bg-background border-t-4 border-secondary">
+      <DrawerPortal>
+        <DrawerContent>
+          <div className="flex flex-col w-full h-screen bg-background">
             <div className="flex flex-col h-full overflow-auto">
-              <div>
-                <div className="p-3 max-w-20 mx-auto cursor-grab active:cursor-grabbing" onClick={onBack}>
-                  <div className="rounded-xl h-1 bg-foreground/50"></div>
-                </div>
-              </div>
               <div className="flex flex-col flex-grow justify-evenly items-center">
-                <div className={`p-4 ${maximized ? "md:w-full" : "md:w-2/3 mx-auto"}`}>
+                <div className={"p-4 md:w-2/3 mx-auto"}>
                   <div className="relative">
-                    <Button variant="ghost" className="mb-4 absolute top-2 right-2 z-10" onClick={handleToggleMaximize}>
-                      {maximized ? <Minimize className="h-4 w-4 text-gray-500" /> : <Maximize className="h-4 w-4 text-gray-500" />}
-                    </Button>
                     {children}
                   </div>
-                  <VaulDrawer.Title className="font-bold text-xl my-4 line-clamp-1">{currentVideo?.title}</VaulDrawer.Title>
+                  <DrawerTitle className="font-bold text-xl my-4 line-clamp-1">{currentVideo?.title}</DrawerTitle>
                   <p>{currentVideo?.author}</p>
                 </div>
                 <Slider.Root
@@ -158,8 +143,8 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
               </div>
             </div>
           </div>
-        </VaulDrawer.Content>
-      </VaulDrawer.Portal>
-    </VaulDrawer.Root>
+        </DrawerContent>
+      </DrawerPortal>
+    </Drawer>
   );
 }

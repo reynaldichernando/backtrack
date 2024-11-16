@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
 const APP_NAME = "BackTrack";
 const APP_DEFAULT_TITLE = "BackTrack";
@@ -41,15 +42,15 @@ export const metadata: Metadata = {
   },
   other: {
     "mobile-web-app-capable": "yes",
-  }
+  },
 };
 
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
-  viewportFit: 'cover',
+  viewportFit: "cover",
   userScalable: false,
-}
+};
 
 export default function RootLayout({
   children,
@@ -60,6 +61,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         {children}
+        <Toaster position="top-right" />
       </body>
     </html>
   );
