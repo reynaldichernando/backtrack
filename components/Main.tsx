@@ -46,8 +46,6 @@ export default function Main() {
 
         setPosition(videoRef.current.currentTime);
         setDuration(videoRef.current.duration);
-
-        navigator.mediaSession.setPositionState({ duration: audioRef.current.duration, position: audioRef.current.currentTime });
       } catch (error) {
       }
     }, 300);
@@ -139,12 +137,15 @@ export default function Main() {
   };
 
   const stopTrack = () => {
-    if (!videoRef.current || !audioRef.current) { return; }
-    videoRef.current.pause();
-    audioRef.current.pause();
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
 
-    videoRef.current.currentTime = 0;
-    audioRef.current.currentTime = 0;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
 
     setIsPlaying(false);
   };
@@ -168,11 +169,13 @@ export default function Main() {
   };
 
   const seekTo = (time: number) => {
-    if (!audioRef.current || !videoRef.current) { return; }
-    audioRef.current.load();
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+    }
 
-    audioRef.current.currentTime = time;
-    videoRef.current.currentTime = time;
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+    }
   }
 
   const handleTogglePlay = () => {
