@@ -2,13 +2,13 @@ import { getMediaBinary, saveMediaBinary } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { FastForward, Maximize, Minimize, Pause, Play, Rewind } from "lucide-react";
+import { FastForward, Pause, Play, Rewind } from "lucide-react";
 import { downloadMedia } from "@/lib/youtube";
 import { MediaBinaryData } from "@/lib/model/MediaBinaryData";
 import Spinner from "./ui/spinner";
 import * as Slider from '@radix-ui/react-slider';
 import { toast } from "sonner";
-import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal, DrawerTitle } from "./ui/drawer";
+import { Drawer, DrawerContent, DrawerPortal, DrawerTitle } from "./ui/drawer";
 
 export default function Player({ children, currentVideo, currentView, isPlaying, position, duration, onBack, onTogglePlay, onClickPrevTrack, onClickNextTrack, updateMediaSources, onSeekTo }: { children: React.ReactNode, currentVideo: Video | null, currentView: string, isPlaying: boolean, position: number, duration: number, onBack: () => void, onTogglePlay: () => void, onClickPrevTrack: () => void, onClickNextTrack: () => void, updateMediaSources: (videoSrc: string, audioSrc: string) => void, onSeekTo: (time: number) => void }) {
   const [loading, setLoading] = useState(false);
