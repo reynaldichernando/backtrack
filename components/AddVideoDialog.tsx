@@ -12,10 +12,22 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { SearchResultItem } from "@/lib/model/SearchResultItem";
 import Spinner from "./ui/spinner";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "./ui/drawer";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "./ui/drawer";
 import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
 
 export default function AddVideoDialog({
   onAddVideo,
@@ -68,10 +80,6 @@ export default function AddVideoDialog({
     } finally {
       setSearchLoading(false);
     }
-  };
-
-  const handleClose = () => {
-    setOpen(false);
   };
 
   const handleOpen = () => {
