@@ -1,4 +1,9 @@
-import { getAllVideos, addVideo, deleteVideo, deleteMediaBinary } from "@/lib/indexedDb";
+import {
+  getAllVideos,
+  addVideo,
+  deleteVideo,
+  deleteMediaBinary,
+} from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
 import { corsFetch, generateThumbnailUrl } from "@/lib/utils";
 import { useState, useRef, useEffect, SyntheticEvent } from "react";
@@ -25,16 +30,26 @@ export default function Main() {
 
   useEffect(() => {
     loadVideos();
-  }, [])
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(function () {
-      if (!videoRef.current || !audioRef.current) { return; }
-      if (!navigator.mediaSession) { return; }
-      if (videoRef.current.duration < 0 || audioRef.current.duration < 0) { return; }
+      if (!videoRef.current || !audioRef.current) {
+        return;
+      }
+      if (!navigator.mediaSession) {
+        return;
+      }
+      if (videoRef.current.duration < 0 || audioRef.current.duration < 0) {
+        return;
+      }
 
       try {
-        if (Math.abs(videoRef.current.currentTime - audioRef.current.currentTime) > 0.3) {
+        if (
+          Math.abs(
+            videoRef.current.currentTime - audioRef.current.currentTime
+          ) > 0.3
+        ) {
           videoRef.current.currentTime = audioRef.current.currentTime;
         }
 
@@ -46,70 +61,83 @@ export default function Main() {
 
         setPosition(videoRef.current.currentTime);
         setDuration(videoRef.current.duration);
-      } catch (error) {
-      }
+      } catch (error) {}
     }, 300);
 
     return () => {
       clearInterval(interval);
-    }
+    };
   }, []);
 
   const loadVideos = async () => {
-    const videos = await getAllVideos()
-    setVideos(videos)
-  }
+    const videos = await getAllVideos();
+    setVideos(videos);
+  };
 
   const handleSelectVideo = (video: Video) => {
-    setCurrentVideo(video)
-    setCurrentView("detail")
-  }
+    setCurrentVideo(video);
+    setCurrentView("detail");
+  };
 
   const handleAddVideo = async (video: Video) => {
     const thumbnailResponse = await corsFetch(generateThumbnailUrl(video.id));
-    const thumbnailBuffer = thumbnailResponse.status === 404 ? await (await fetch(video.thumbnail)).arrayBuffer() : await thumbnailResponse.arrayBuffer();
-    const thumbnailBase64 = Buffer.from(thumbnailBuffer).toString('base64');
+    const thumbnailBuffer =
+      thumbnailResponse.status === 404
+        ? await (await fetch(video.thumbnail)).arrayBuffer()
+        : await thumbnailResponse.arrayBuffer();
+    const thumbnailBase64 = Buffer.from(thumbnailBuffer).toString("base64");
 
     await addVideo({
       ...video,
-      thumbnail: `data:image/jpeg;base64,${thumbnailBase64}`
+      thumbnail: `data:image/jpeg;base64,${thumbnailBase64}`,
     });
 
-    toast('Video added successfully');
+    toast("Video added successfully");
     await loadVideos();
-  }
+  };
 
   const handleDeleteVideo = async (video: Video) => {
     await deleteVideo(video.id);
     await deleteMediaBinary(video.id);
-    toast('Video deleted successfully');
+    toast("Video deleted successfully");
     loadVideos();
-  }
+  };
 
   const handlePlayerBack = () => {
     setCurrentView("home");
-  }
+  };
 
   const handleMiniPlayerClick = () => {
     setCurrentView("detail");
-  }
+  };
 
   const setHandlers = (event: SyntheticEvent<HTMLAudioElement>) => {
-    if (!currentVideo) { return; }
+    if (!currentVideo) {
+      return;
+    }
     const playingVideo = videos.find((video) => video.id === currentVideo.id);
-    if (!playingVideo) { return; }
-    navigator.mediaSession.metadata = new MediaMetadata({ title: playingVideo.title, artist: playingVideo.author, artwork: [{ src: playingVideo.thumbnail }] });
-    navigator.mediaSession.setActionHandler('play', playTrack);
-    navigator.mediaSession.setActionHandler('pause', pauseTrack);
-    navigator.mediaSession.setActionHandler('stop', stopTrack);
-    navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
-    navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
-    navigator.mediaSession.setActionHandler('seekto', (details: MediaSessionActionDetails) => seekTo(details.seekTime ?? 0));
+    if (!playingVideo) {
+      return;
+    }
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: playingVideo.title,
+      artist: playingVideo.author,
+      artwork: [{ src: playingVideo.thumbnail }],
+    });
+    navigator.mediaSession.setActionHandler("play", playTrack);
+    navigator.mediaSession.setActionHandler("pause", pauseTrack);
+    navigator.mediaSession.setActionHandler("stop", stopTrack);
+    navigator.mediaSession.setActionHandler("previoustrack", prevTrack);
+    navigator.mediaSession.setActionHandler("nexttrack", nextTrack);
+    navigator.mediaSession.setActionHandler(
+      "seekto",
+      (details: MediaSessionActionDetails) => seekTo(details.seekTime ?? 0)
+    );
     navigator.mediaSession.playbackState = "playing";
     setIsPlaying(true);
     setPosition(0);
     setDuration(event.currentTarget.duration);
-  }
+  };
 
   const playTrack = () => {
     if (videoRef.current) {
@@ -151,7 +179,9 @@ export default function Main() {
   };
 
   const prevTrack = () => {
-    const currentIndex = videos.findIndex((video) => video.id === currentVideo?.id);
+    const currentIndex = videos.findIndex(
+      (video) => video.id === currentVideo?.id
+    );
     if (currentIndex === 0) {
       return;
     }
@@ -160,7 +190,9 @@ export default function Main() {
   };
 
   const nextTrack = () => {
-    const currentIndex = videos.findIndex((video) => video.id === currentVideo?.id);
+    const currentIndex = videos.findIndex(
+      (video) => video.id === currentVideo?.id
+    );
     if (currentIndex === videos.length - 1) {
       return;
     }
@@ -176,7 +208,7 @@ export default function Main() {
     if (videoRef.current) {
       videoRef.current.currentTime = time;
     }
-  }
+  };
 
   const handleTogglePlay = () => {
     if (isPlaying) {
@@ -184,27 +216,44 @@ export default function Main() {
     } else {
       playTrack();
     }
-  }
+  };
 
   const updateMediaSources = (videoSrc: string, audioSrc: string) => {
     setVideoSrc(videoSrc);
     setAudioSrc(audioSrc);
-  }
+  };
 
   return (
     <>
-      <main className="flex flex-col md:flex-row md:items-start min-h-screen-safe mt-safe ml-safe mr-safe">
-        <div className="md:sticky top-0 left-0 w-full md:w-1/4 p-4 space-y-2">
-          <div className="flex items-center space-x-2 my-3">
-            <img src="./144.png" alt="BackTrack Logo" className="size-8 rounded" />
-            <h1 className="text-2xl font-bold">BackTrack</h1>
+      <div className="flex flex-col h-screen">
+        <main className="flex flex-col md:flex-row flex-1 overflow-y-auto md:items-start min-h-screen-safe mt-safe ml-safe mr-safe">
+          <div className="md:sticky top-0 left-0 w-full md:w-1/4 p-4 space-y-2">
+            <div className="flex items-center space-x-2 my-3">
+              <img
+                src="./144.png"
+                alt="BackTrack Logo"
+                className="size-8 rounded"
+              />
+              <h1 className="text-2xl font-bold">BackTrack</h1>
+            </div>
+            <AddVideoDialog onAddVideo={handleAddVideo} />
           </div>
-          <AddVideoDialog onAddVideo={handleAddVideo} />
-        </div>
-        <div className="w-full md:w-3/4 p-4 pb-20 md:border-l-2 border-secondary flex-grow self-stretch">
-          <MyVideos videos={videos} onSelectVideo={handleSelectVideo} onDeleteVideo={handleDeleteVideo} />
-        </div>
-      </main>
+          <div className="w-full md:w-3/4 p-4 border-secondary flex-grow self-stretch">
+            <MyVideos
+              videos={videos}
+              onSelectVideo={handleSelectVideo}
+              onDeleteVideo={handleDeleteVideo}
+            />
+          </div>
+        </main>
+        <MiniPlayer
+          currentVideo={currentVideo}
+          currentView={currentView}
+          isPlaying={isPlaying}
+          onClick={handleMiniPlayerClick}
+          onTogglePlay={handleTogglePlay}
+        />
+      </div>
       <Player
         currentVideo={currentVideo}
         currentView={currentView}
@@ -236,7 +285,6 @@ export default function Main() {
         onPlay={setHandlers}
         onEnded={nextTrack}
       />
-      <MiniPlayer currentVideo={currentVideo} currentView={currentView} isPlaying={isPlaying} onClick={handleMiniPlayerClick} onTogglePlay={handleTogglePlay} />
     </>
-  )
+  );
 }
