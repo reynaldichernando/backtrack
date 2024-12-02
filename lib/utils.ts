@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -56,9 +56,5 @@ export function corsProxy(url: string): string {
 export function corsFetch(url: string, init?: RequestInit): Promise<Response> {
   return fetch(corsProxy(url), {
     ...init,
-    headers: {
-      ...init?.headers,
-      "x-corsfix-key": "75c93250-fd65-49f7-92aa-aeeb26c1290b",
-    },
   });
 }
