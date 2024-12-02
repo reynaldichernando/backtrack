@@ -185,26 +185,46 @@ function findFormat(
     : filtered.sort((a, b) => b.filesize! - a.filesize!)[0];
 }
 
+interface DownloadProgress {
+  downloaded: number;
+  total: number;
+  percent: number;
+}
+
+// Add this type for the progress callback
+type ProgressCallback = (progress: DownloadProgress) => void;
+
+// Update the downloadFormat function to accept a progress callback
 async function downloadFormat(
   format: FormatInfo | null,
-  videoId: string
+  videoId: string,
+  onProgress?: ProgressCallback
 ): Promise<ArrayBuffer | null> {
   if (!format) return null;
 
   const CHUNK_SIZE = 3 * 1024 * 1024;
   const downloadPromises: Promise<ArrayBuffer>[] = [];
+  let downloadedSize = 0;
 
   for (let start = 0; start < format.filesize!; start += CHUNK_SIZE) {
     const end = Math.min(start + CHUNK_SIZE, format.filesize!);
     const range = `bytes=${start}-${end - 1}`;
 
     downloadPromises.push(
-      downloadChunk(format.url, range, videoId, format.format_id).catch(
-        (error) => {
+      downloadChunk(format.url, range, videoId, format.format_id)
+        .then((chunk) => {
+          downloadedSize += chunk.byteLength;
+          onProgress?.({
+            downloaded: downloadedSize,
+            total: format.filesize!,
+            percent: (downloadedSize / format.filesize!) * 100,
+          });
+          return chunk;
+        })
+        .catch((error) => {
           console.error(`Failed to download chunk ${start}-${end}:`, error);
           throw error;
-        }
-      )
+        })
     );
   }
 
@@ -230,15 +250,18 @@ export async function downloadAudio(id: string): Promise<ArrayBuffer | null> {
   return downloadFormat(findFormat(videoInfo.formats, false), id);
 }
 
+// Update the downloadMedia function to include progress tracking
 export async function downloadMedia(
   id: string,
-  quality: string = "medium"
+  quality: string = "medium",
+  onVideoProgress?: ProgressCallback,
+  onAudioProgress?: ProgressCallback
 ): Promise<{ video: ArrayBuffer | null; audio: ArrayBuffer | null }> {
   const videoInfo = await fetchVideoInfo(id);
 
   const [video, audio] = await Promise.all([
-    downloadFormat(findFormat(videoInfo.formats, true, quality), id),
-    downloadFormat(findFormat(videoInfo.formats, false), id),
+    downloadFormat(findFormat(videoInfo.formats, true, quality), id, onVideoProgress),
+    downloadFormat(findFormat(videoInfo.formats, false), id, onAudioProgress),
   ]);
 
   return { video, audio };

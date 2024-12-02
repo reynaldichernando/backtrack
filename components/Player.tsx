@@ -1,6 +1,6 @@
 import { getMediaBinary, saveMediaBinary } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "./ui/button";
 import { FastForward, Pause, Play, Rewind } from "lucide-react";
 import { MediaBinaryData } from "@/lib/model/MediaBinaryData";
@@ -41,6 +41,7 @@ export default function Player({
   const [open, setOpen] = useState(false);
   const [seeking, setSeeking] = useState(false);
   const [tempPosition, setTempPosition] = useState(0);
+  const mediaProgressRef = useRef(0);
 
   useEffect(() => {
     getVideo();
@@ -66,17 +67,41 @@ export default function Player({
 
       updateMediaSources(videoUrl, audioUrl);
     } else {
-      const toastId = toast.loading("Downloading video...");
+      const toastId = toast.loading(currentVideo.title, {
+        description: "Downloading... 0%",
+      });
       setLoading(true);
+      mediaProgressRef.current = 0;
 
       try {
-        const { video, audio } = await downloadMedia(currentVideo.id);
+        const { video, audio } = await downloadMedia(
+          currentVideo.id,
+          "medium",
+          (progress) => {
+            const newProgress = (progress.percent + mediaProgressRef.current) / 2;
+            mediaProgressRef.current = newProgress;
+            toast.loading(currentVideo.title, {
+              id: toastId,
+              description: `Downloading... ${Math.round(newProgress)}%`
+            });
+          },
+          (progress) => {
+            const newProgress = (progress.percent + mediaProgressRef.current) / 2;
+            mediaProgressRef.current = newProgress;
+            toast.loading(currentVideo.title, {
+              id: toastId,
+              description: `Downloading... ${Math.round(newProgress)}%`
+            });
+          }
+        );
 
         if (!video || !audio) {
           setLoading(false);
           updateMediaSources("", "");
-          toast.dismiss(toastId);
-          toast("Failed to download video");
+          toast.error("Failed to download media", { 
+            id: toastId,
+            duration: 2000
+          });
           return;
         }
 
@@ -88,17 +113,31 @@ export default function Player({
         const videoUrl = URL.createObjectURL(videoBlob);
         const audioUrl = URL.createObjectURL(audioBlob);
 
+        toast.loading(currentVideo.title, {
+          id: toastId,
+          description: "Downloading... 100%"
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         updateMediaSources(videoUrl, audioUrl);
-        toast.dismiss(toastId);
-        toast("Video saved successfully");
+        toast.success(currentVideo.title, { 
+          id: toastId,
+          description: "Download complete",
+          duration: 2000
+        });
       } catch (error) {
         setLoading(false);
         updateMediaSources("", "");
-        toast.dismiss(toastId);
-        toast("Failed to download video");
+        toast.error(currentVideo.title, { 
+          id: toastId,
+          description: "Download failed",
+          duration: 2000
+        });
         console.error(error);
       } finally {
         setLoading(false);
+        mediaProgressRef.current = 0;
       }
     }
   };
