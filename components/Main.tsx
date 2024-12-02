@@ -1,76 +1,130 @@
-'use client';
+"use client";
 
 import {
   getAllVideos,
   addVideo,
   deleteVideo,
   deleteMediaBinary,
+  getMediaBinary,
 } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
 import { corsFetch, generateThumbnailUrl } from "@/lib/utils";
-import { useState, useRef, useEffect, SyntheticEvent } from "react";
+import { useState, useRef, useEffect } from "react";
 import AddVideoDialog from "./AddVideoDialog";
 import MiniPlayer from "./MiniPlayer";
 import Player from "./Player";
 import MyVideos from "./MyVideos";
 import { toast } from "sonner";
-import { initializeSearchIndex, addToSearchIndex, removeFromSearchIndex } from "@/lib/flexSearch";
+import {
+  initializeSearchIndex,
+  addToSearchIndex,
+  removeFromSearchIndex,
+} from "@/lib/flexSearch";
+import { useMediaDownload } from "@/lib/hooks/useMediaDownload";
+import { useMediaSession } from "@/lib/hooks/useMediaSession";
 
 export default function Main() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [currentView, setCurrentView] = useState("home");
   const [currentVideo, setCurrentVideo] = useState<Video | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   const [videoSrc, setVideoSrc] = useState<string>();
   const [audioSrc, setAudioSrc] = useState<string>();
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
-  const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const { getMedia } = useMediaDownload();
+
+  const mediaHandlers = {
+    onPlay: () => {
+      videoRef.current?.play();
+      audioRef.current?.play();
+      setIsPlaying(true);
+      navigator.mediaSession.playbackState = "playing";
+    },
+    onPause: () => {
+      videoRef.current?.pause();
+      audioRef.current?.pause();
+      setIsPlaying(false);
+      navigator.mediaSession.playbackState = "paused";
+    },
+    onStop: () => {
+      if (videoRef.current && audioRef.current) {
+        videoRef.current.pause();
+        audioRef.current.pause();
+        videoRef.current.currentTime = 0;
+        audioRef.current.currentTime = 0;
+      }
+      setIsPlaying(false);
+    },
+    onPrev: () => handleTrackChange("prev"),
+    onNext: () => handleTrackChange("next"),
+    onSeek: (time: number) => {
+      videoRef.current && (videoRef.current.currentTime = time);
+      audioRef.current && (audioRef.current.currentTime = time);
+    }
+  };
+
+  const { updateMetadata, setupHandlers } = useMediaSession(currentVideo, mediaHandlers);
+
+  const handleTogglePlay = () => {
+    if (isPlaying) {
+      mediaHandlers.onPause();
+    } else {
+      mediaHandlers.onPlay();
+    }
+  };
+
+  const handleAudioPlay = (event: React.SyntheticEvent<HTMLAudioElement>) => {
+    if (!currentVideo) return;
+    
+    updateMetadata();
+    setupHandlers();
+    setIsPlaying(true);
+    setPosition(0);
+    setDuration(event.currentTarget.duration);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const video = videoRef.current;
+      const audio = audioRef.current;
+      
+      if (!video || !audio || video.duration < 0 || audio.duration < 0) return;
+
+      if (Math.abs(video.currentTime - audio.currentTime) > 0.3) {
+        video.currentTime = audio.currentTime;
+      }
+
+      if (audio.paused !== video.paused) {
+        audio.paused ? video.pause() : video.play();
+      }
+
+      setPosition(video.currentTime);
+      setDuration(video.duration);
+    }, 300);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     loadVideos();
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(function () {
-      if (!videoRef.current || !audioRef.current) {
-        return;
-      }
-      if (!navigator.mediaSession) {
-        return;
-      }
-      if (videoRef.current.duration < 0 || audioRef.current.duration < 0) {
-        return;
-      }
-
-      try {
-        if (
-          Math.abs(
-            videoRef.current.currentTime - audioRef.current.currentTime
-          ) > 0.3
-        ) {
-          videoRef.current.currentTime = audioRef.current.currentTime;
-        }
-
-        if (audioRef.current.paused && !videoRef.current.paused) {
-          videoRef.current.pause();
-        } else if (!audioRef.current.paused && videoRef.current.paused) {
-          videoRef.current.play();
-        }
-
-        setPosition(videoRef.current.currentTime);
-        setDuration(videoRef.current.duration);
-      } catch (error) {}
-    }, 300);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
+  const handleTrackChange = async (direction: "prev" | "next") => {
+    const currentIndex = videos.findIndex(v => v.id === currentVideo?.id);
+    const nextVideo = await findNextDownloadedVideo(currentIndex, direction);
+    
+    if (nextVideo) {
+      handleSelectVideo(nextVideo);
+    } else {
+      toast.error(`No ${direction === "prev" ? "previous" : "more"} downloaded videos available`);
+    }
+  };
 
   const loadVideos = async () => {
     const videos = await getAllVideos();
@@ -78,9 +132,17 @@ export default function Main() {
     await initializeSearchIndex(videos);
   };
 
-  const handleSelectVideo = (video: Video) => {
-    setCurrentVideo(video);
-    setCurrentView("detail");
+  const handleSelectVideo = async (video: Video) => {
+    try {
+      const { videoUrl, audioUrl } = await getMedia(video.id, video.title);
+      setVideoSrc(videoUrl);
+      setAudioSrc(audioUrl);
+      setCurrentVideo(video);
+      setCurrentView("detail");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load video");
+    }
   };
 
   const handleAddVideo = async (video: Video) => {
@@ -118,116 +180,21 @@ export default function Main() {
     setCurrentView("detail");
   };
 
-  const setHandlers = (event: SyntheticEvent<HTMLAudioElement>) => {
-    if (!currentVideo) {
-      return;
+  const findNextDownloadedVideo = async (
+    currentIndex: number,
+    direction: "next" | "prev"
+  ) => {
+    const step = direction === "next" ? 1 : -1;
+    const limit = direction === "next" ? videos.length : -1;
+
+    for (let i = currentIndex + step; i !== limit; i += step) {
+      const video = videos[i];
+      const media = await getMediaBinary(video.id);
+      if (media) {
+        return video;
+      }
     }
-    const playingVideo = videos.find((video) => video.id === currentVideo.id);
-    if (!playingVideo) {
-      return;
-    }
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: playingVideo.title,
-      artist: playingVideo.author,
-      artwork: [{ src: playingVideo.thumbnail }],
-    });
-    navigator.mediaSession.setActionHandler("play", playTrack);
-    navigator.mediaSession.setActionHandler("pause", pauseTrack);
-    navigator.mediaSession.setActionHandler("stop", stopTrack);
-    navigator.mediaSession.setActionHandler("previoustrack", prevTrack);
-    navigator.mediaSession.setActionHandler("nexttrack", nextTrack);
-    navigator.mediaSession.setActionHandler(
-      "seekto",
-      (details: MediaSessionActionDetails) => seekTo(details.seekTime ?? 0)
-    );
-    navigator.mediaSession.playbackState = "playing";
-    setIsPlaying(true);
-    setPosition(0);
-    setDuration(event.currentTarget.duration);
-  };
-
-  const playTrack = () => {
-    if (videoRef.current) {
-      videoRef.current.play();
-    }
-
-    if (audioRef.current) {
-      audioRef.current.play();
-    }
-
-    navigator.mediaSession.playbackState = "playing";
-    setIsPlaying(true);
-  };
-
-  const pauseTrack = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
-
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    navigator.mediaSession.playbackState = "paused";
-    setIsPlaying(false);
-  };
-
-  const stopTrack = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
-
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-
-    setIsPlaying(false);
-  };
-
-  const prevTrack = () => {
-    const currentIndex = videos.findIndex(
-      (video) => video.id === currentVideo?.id
-    );
-    if (currentIndex === 0) {
-      return;
-    }
-    const prevIndex = currentIndex - 1;
-    setCurrentVideo(videos[prevIndex]);
-  };
-
-  const nextTrack = () => {
-    const currentIndex = videos.findIndex(
-      (video) => video.id === currentVideo?.id
-    );
-    if (currentIndex === videos.length - 1) {
-      return;
-    }
-    const nextIndex = currentIndex + 1;
-    setCurrentVideo(videos[nextIndex]);
-  };
-
-  const seekTo = (time: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-    }
-
-    if (videoRef.current) {
-      videoRef.current.currentTime = time;
-    }
-  };
-
-  const handleTogglePlay = () => {
-    if (isPlaying) {
-      pauseTrack();
-    } else {
-      playTrack();
-    }
-  };
-
-  const updateMediaSources = (videoSrc: string, audioSrc: string) => {
-    setVideoSrc(videoSrc);
-    setAudioSrc(audioSrc);
+    return null;
   };
 
   return (
@@ -243,7 +210,10 @@ export default function Main() {
               />
               <h1 className="text-2xl font-bold">BackTrack</h1>
             </div>
-            <AddVideoDialog onAddVideo={handleAddVideo} onSelectVideo={handleSelectVideo} />
+            <AddVideoDialog
+              onAddVideo={handleAddVideo}
+              onSelectVideo={handleSelectVideo}
+            />
           </div>
           <div className="w-full md:w-3/4 p-4 border-secondary flex-grow self-stretch">
             <MyVideos
@@ -269,10 +239,9 @@ export default function Main() {
         duration={duration}
         onBack={handlePlayerBack}
         onTogglePlay={handleTogglePlay}
-        onClickPrevTrack={prevTrack}
-        onClickNextTrack={nextTrack}
-        updateMediaSources={updateMediaSources}
-        onSeekTo={seekTo}
+        onClickPrevTrack={() => handleTrackChange("prev")}
+        onClickNextTrack={() => handleTrackChange("next")}
+        onSeekTo={mediaHandlers.onSeek}
       >
         <video
           className="aspect-video w-full bg-secondary rounded-lg"
@@ -289,8 +258,8 @@ export default function Main() {
         autoPlay
         src={audioSrc}
         ref={audioRef}
-        onPlay={setHandlers}
-        onEnded={nextTrack}
+        onPlay={handleAudioPlay}
+        onEnded={() => handleTrackChange("next")}
       />
     </>
   );

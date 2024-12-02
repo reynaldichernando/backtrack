@@ -1,14 +1,9 @@
-import { getMediaBinary, saveMediaBinary } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { FastForward, Pause, Play, Rewind } from "lucide-react";
-import { MediaBinaryData } from "@/lib/model/MediaBinaryData";
-import Spinner from "./ui/spinner";
 import * as Slider from "@radix-ui/react-slider";
-import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerPortal, DrawerTitle } from "./ui/drawer";
-import { downloadMedia } from "@/lib/youtube";
 
 export default function Player({
   children,
@@ -21,7 +16,6 @@ export default function Player({
   onTogglePlay,
   onClickPrevTrack,
   onClickNextTrack,
-  updateMediaSources,
   onSeekTo,
 }: {
   children: React.ReactNode;
@@ -34,113 +28,15 @@ export default function Player({
   onTogglePlay: () => void;
   onClickPrevTrack: () => void;
   onClickNextTrack: () => void;
-  updateMediaSources: (videoSrc: string, audioSrc: string) => void;
   onSeekTo: (time: number) => void;
 }) {
-  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [seeking, setSeeking] = useState(false);
   const [tempPosition, setTempPosition] = useState(0);
-  const mediaProgressRef = useRef(0);
-
-  useEffect(() => {
-    getVideo();
-  }, [currentVideo]);
 
   useEffect(() => {
     setOpen(currentView === "detail");
   }, [currentView]);
-
-  const getVideo = async () => {
-    if (!currentVideo) {
-      return;
-    }
-
-    const media: MediaBinaryData = await getMediaBinary(currentVideo.id);
-
-    if (media) {
-      const videoBlob = new Blob([media.video], { type: "video/webm" });
-      const audioBlob = new Blob([media.audio], { type: "audio/webm" });
-
-      const videoUrl = URL.createObjectURL(videoBlob);
-      const audioUrl = URL.createObjectURL(audioBlob);
-
-      updateMediaSources(videoUrl, audioUrl);
-    } else {
-      const toastId = toast.loading(currentVideo.title, {
-        description: "Downloading... 0%",
-      });
-      setLoading(true);
-      mediaProgressRef.current = 0;
-
-      try {
-        const { video, audio } = await downloadMedia(
-          currentVideo.id,
-          "medium",
-          (progress) => {
-            const newProgress = (progress.percent + mediaProgressRef.current) / 2;
-            mediaProgressRef.current = newProgress;
-            toast.loading(currentVideo.title, {
-              id: toastId,
-              description: `Downloading... ${Math.round(newProgress)}%`
-            });
-          },
-          (progress) => {
-            const newProgress = (progress.percent + mediaProgressRef.current) / 2;
-            mediaProgressRef.current = newProgress;
-            toast.loading(currentVideo.title, {
-              id: toastId,
-              description: `Downloading... ${Math.round(newProgress)}%`
-            });
-          }
-        );
-
-        if (!video || !audio) {
-          setLoading(false);
-          updateMediaSources("", "");
-          toast.error("Failed to download media", { 
-            id: toastId,
-            duration: 2000
-          });
-          return;
-        }
-
-        await saveMediaBinary(currentVideo.id, video, audio);
-
-        const videoBlob = new Blob([video], { type: "video/webm" });
-        const audioBlob = new Blob([audio], { type: "audio/webm" });
-
-        const videoUrl = URL.createObjectURL(videoBlob);
-        const audioUrl = URL.createObjectURL(audioBlob);
-
-        toast.loading(currentVideo.title, {
-          id: toastId,
-          description: "Downloading... 100%"
-        });
-
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        updateMediaSources(videoUrl, audioUrl);
-        toast.success(currentVideo.title, { 
-          id: toastId,
-          description: "Download complete",
-          duration: 2000
-        });
-      } catch (error) {
-        setLoading(false);
-        updateMediaSources("", "");
-        toast.error(currentVideo.title, { 
-          id: toastId,
-          description: "Download failed",
-          duration: 2000
-        });
-        console.error(error);
-      } finally {
-        setLoading(false);
-        mediaProgressRef.current = 0;
-      }
-    }
-  };
 
   const getMinuteSecondPosition = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -216,9 +112,7 @@ export default function Player({
                     onClick={onTogglePlay}
                     className="transition-all duration-300 ease-in-out active:scale-75"
                   >
-                    {loading ? (
-                      <Spinner className="size-8" />
-                    ) : isPlaying ? (
+                    {isPlaying ? (
                       <Pause className="size-8" fill="currentColor" />
                     ) : (
                       <Play className="size-8" fill="currentColor" />
