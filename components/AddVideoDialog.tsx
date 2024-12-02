@@ -22,7 +22,6 @@ import {
   DrawerTrigger,
 } from "./ui/drawer";
 import { toast } from "sonner";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   Dialog,
   DialogContent,
@@ -31,16 +30,17 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { searchVideos } from "@/lib/flexSearch";
+import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 
-function LocalSearchResults({ 
+function LocalSearchResults({
   videos,
-  onSelectVideo 
-}: { 
+  onSelectVideo,
+}: {
   videos: Video[];
   onSelectVideo: (video: Video) => void;
 }) {
   if (videos.length === 0) return null;
-  
+
   return (
     <div>
       <h3 className="text-sm font-medium text-muted-foreground mb-2">
@@ -71,14 +71,14 @@ function LocalSearchResults({
   );
 }
 
-function YouTubeSearchResults({ 
+function YouTubeSearchResults({
   videos,
   searchQuery,
   isLoading,
   onAddVideo,
   onSearch,
-  onClear
-}: { 
+  onClear,
+}: {
   videos: Video[];
   searchQuery: string;
   isLoading: boolean;
@@ -94,11 +94,7 @@ function YouTubeSearchResults({
         </h3>
         <div className="flex items-center space-x-2">
           {videos.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClear}
-            >
+            <Button variant="ghost" size="sm" onClick={onClear}>
               Clear Results
             </Button>
           )}
@@ -162,18 +158,20 @@ export default function AddVideoDialog({
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery) return;
-    
+
     setSearchLoading(true);
     try {
       if (isYoutubeUrl(searchQuery)) {
         const videoId = extractVideoId(searchQuery);
         const videoInfo = await fetchVideoInfo(videoId || "");
-        setRemoteVideos([{
-          id: videoId,
-          title: videoInfo.title,
-          thumbnail: generateThumbnailUrl(videoId),
-          author: videoInfo.uploader,
-        } as Video]);
+        setRemoteVideos([
+          {
+            id: videoId,
+            title: videoInfo.title,
+            thumbnail: generateThumbnailUrl(videoId),
+            author: videoInfo.uploader,
+          } as Video,
+        ]);
       } else {
         const res = await search({ query: `${searchQuery} site:youtube.com` });
         setRemoteVideos(
@@ -207,7 +205,13 @@ export default function AddVideoDialog({
   }, []);
 
   const searchContent = (
-    <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="space-y-4">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSearch();
+      }}
+      className="space-y-4"
+    >
       <Input
         data-autofocus
         autoFocus
@@ -217,11 +221,11 @@ export default function AddVideoDialog({
       />
       {searchQuery.length >= 2 && (
         <div className="space-y-4">
-          <LocalSearchResults 
+          <LocalSearchResults
             videos={localVideos}
-            onSelectVideo={onSelectVideo} 
+            onSelectVideo={onSelectVideo}
           />
-          <YouTubeSearchResults 
+          <YouTubeSearchResults
             videos={remoteVideos}
             searchQuery={searchQuery}
             isLoading={searchLoading}
