@@ -1,3 +1,5 @@
+'use client';
+
 import {
   getAllVideos,
   addVideo,
@@ -12,6 +14,7 @@ import MiniPlayer from "./MiniPlayer";
 import Player from "./Player";
 import MyVideos from "./MyVideos";
 import { toast } from "sonner";
+import { initializeSearchIndex, addToSearchIndex, removeFromSearchIndex } from "@/lib/flexSearch";
 
 export default function Main() {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -72,6 +75,7 @@ export default function Main() {
   const loadVideos = async () => {
     const videos = await getAllVideos();
     setVideos(videos);
+    await initializeSearchIndex(videos);
   };
 
   const handleSelectVideo = (video: Video) => {
@@ -87,11 +91,13 @@ export default function Main() {
         : await thumbnailResponse.arrayBuffer();
     const thumbnailBase64 = Buffer.from(thumbnailBuffer).toString("base64");
 
-    await addVideo({
+    const newVideo = {
       ...video,
       thumbnail: `data:image/jpeg;base64,${thumbnailBase64}`,
-    });
+    };
 
+    await addVideo(newVideo);
+    await addToSearchIndex(newVideo);
     toast("Video added successfully");
     await loadVideos();
   };
@@ -99,6 +105,7 @@ export default function Main() {
   const handleDeleteVideo = async (video: Video) => {
     await deleteVideo(video.id);
     await deleteMediaBinary(video.id);
+    await removeFromSearchIndex(video.id);
     toast("Video deleted successfully");
     loadVideos();
   };
@@ -236,7 +243,7 @@ export default function Main() {
               />
               <h1 className="text-2xl font-bold">BackTrack</h1>
             </div>
-            <AddVideoDialog onAddVideo={handleAddVideo} />
+            <AddVideoDialog onAddVideo={handleAddVideo} onSelectVideo={handleSelectVideo} />
           </div>
           <div className="w-full md:w-3/4 p-4 border-secondary flex-grow self-stretch">
             <MyVideos
