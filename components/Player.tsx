@@ -44,8 +44,10 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
       setLoading(true);
 
       try {
-        const videoBuffer = await downloadMedia(currentVideo.id, 'video');
-        const audioBuffer = await downloadMedia(currentVideo.id, 'audio');
+        const [videoBuffer, audioBuffer] = await Promise.all([
+          downloadMedia(currentVideo.id, 'video'),
+          downloadMedia(currentVideo.id, 'audio')
+        ]);
 
         if (!videoBuffer || !audioBuffer) {
           setLoading(false);

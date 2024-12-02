@@ -153,7 +153,7 @@ export async function downloadMedia(
     return null;
   }
 
-  const CHUNK_SIZE = 5 * 1024 * 1024;
+  const CHUNK_SIZE = 2 * 1024 * 1024;
   const downloadPromises: Promise<ArrayBuffer>[] = [];
 
   for (let start = 0; start < format.filesize; start += CHUNK_SIZE) {
