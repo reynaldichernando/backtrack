@@ -9,7 +9,7 @@ import {
 } from "@/lib/utils";
 import { fetchVideoInfo } from "@/lib/youtube";
 import { Search } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { SearchResultItem } from "@/lib/model/SearchResultItem";
@@ -31,6 +31,107 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { searchVideos } from "@/lib/flexSearch";
+
+function LocalSearchResults({ 
+  videos,
+  onSelectVideo 
+}: { 
+  videos: Video[];
+  onSelectVideo: (video: Video) => void;
+}) {
+  if (videos.length === 0) return null;
+  
+  return (
+    <div>
+      <h3 className="text-sm font-medium text-muted-foreground mb-2">
+        From Your Library
+      </h3>
+      <div className="bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+        {videos.map((video) => (
+          <div
+            key={video.id}
+            className="p-2 hover:bg-accent cursor-pointer"
+            onClick={() => onSelectVideo(video)}
+          >
+            <div className="flex items-center space-x-2">
+              <img
+                src={video.thumbnail}
+                alt={video.title}
+                className="w-12 h-12 object-cover rounded"
+              />
+              <div>
+                <p className="font-medium line-clamp-1">{video.title}</p>
+                <p className="text-sm text-muted-foreground">{video.author}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function YouTubeSearchResults({ 
+  videos,
+  searchQuery,
+  isLoading,
+  onAddVideo,
+  onSearch,
+  onClear
+}: { 
+  videos: Video[];
+  searchQuery: string;
+  isLoading: boolean;
+  onAddVideo: (video: Video) => void;
+  onSearch: () => void;
+  onClear: () => void;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-medium text-muted-foreground">
+          From YouTube
+        </h3>
+        <div className="flex items-center space-x-2">
+          {videos.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClear}
+            >
+              Clear Results
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onSearch}
+            disabled={searchQuery.length < 2 || isLoading}
+          >
+            {isLoading ? <Spinner className="h-4 w-4" /> : "Search YouTube"}
+          </Button>
+        </div>
+      </div>
+      {videos.length > 0 ? (
+        <div className="space-y-1 max-h-48 overflow-auto">
+          {videos.map((video) => (
+            <VideoItem
+              key={video.id}
+              video={video}
+              onClick={() => onAddVideo(video)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="p-2 text-muted-foreground text-center border rounded-md">
+          {searchQuery.length >= 2
+            ? 'Click "Search YouTube" to find videos'
+            : "Type to search YouTube videos"}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AddVideoDialog({
   onAddVideo,
@@ -59,25 +160,20 @@ export default function AddVideoDialog({
     return () => clearTimeout(debounceTimeout);
   }, [searchQuery]);
 
-  const handleSearch = async () => {
-    if (!searchQuery) {
-      return;
-    }
+  const handleSearch = useCallback(async () => {
+    if (!searchQuery) return;
+    
     setSearchLoading(true);
-
     try {
       if (isYoutubeUrl(searchQuery)) {
         const videoId = extractVideoId(searchQuery);
         const videoInfo = await fetchVideoInfo(videoId || "");
-
-        setRemoteVideos([
-          {
-            id: videoId,
-            title: videoInfo.title,
-            thumbnail: generateThumbnailUrl(videoId),
-            author: videoInfo.uploader,
-          } as Video,
-        ]);
+        setRemoteVideos([{
+          id: videoId,
+          title: videoInfo.title,
+          thumbnail: generateThumbnailUrl(videoId),
+          author: videoInfo.uploader,
+        } as Video]);
       } else {
         const res = await search({ query: `${searchQuery} site:youtube.com` });
         setRemoteVideos(
@@ -97,107 +193,45 @@ export default function AddVideoDialog({
     } finally {
       setSearchLoading(false);
     }
-  };
+  }, [searchQuery]);
 
-  const handleOpen = () => {
+  const handleOpen = useCallback(() => {
     setSearchQuery("");
     setRemoteVideos([]);
     setLocalVideos([]);
     setOpen(true);
-  };
+  }, []);
 
-  const handleSearchResultClick = (video: Video) => {
-    onSelectVideo(video);
-    setSearchQuery("");
-    setOpen(false);
-  };
+  const handleClearResults = useCallback(() => {
+    setRemoteVideos([]);
+  }, []);
 
-  const SearchResults = () => (
-    <>
+  const searchContent = (
+    <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="space-y-4">
+      <Input
+        data-autofocus
+        autoFocus
+        placeholder="Type keyword or paste YouTube link"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
       {searchQuery.length >= 2 && (
         <div className="space-y-4">
-          {localVideos.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                From Your Library
-              </h3>
-              <div className="bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                {localVideos.map((video) => (
-                  <div
-                    key={video.id}
-                    className="p-2 hover:bg-accent cursor-pointer"
-                    onClick={() => handleSearchResultClick(video)}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <img
-                        src={video.thumbnail}
-                        alt={video.title}
-                        className="w-12 h-12 object-cover rounded"
-                      />
-                      <div>
-                        <p className="font-medium line-clamp-1">
-                          {video.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {video.author}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-muted-foreground">
-                From YouTube
-              </h3>
-              <div className="flex items-center space-x-2">
-                {remoteVideos.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setRemoteVideos([])}
-                  >
-                    Clear Results
-                  </Button>
-                )}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleSearch}
-                  disabled={searchQuery.length < 2 || searchLoading}
-                >
-                  {searchLoading ? (
-                    <Spinner className="h-4 w-4" />
-                  ) : (
-                    "Search YouTube"
-                  )}
-                </Button>
-              </div>
-            </div>
-            {remoteVideos.length > 0 ? (
-              <div className="space-y-1 max-h-48 overflow-auto">
-                {remoteVideos.map((video) => (
-                  <VideoItem
-                    key={video.id}
-                    video={video}
-                    onClick={() => onAddVideo(video)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="p-2 text-muted-foreground text-center border rounded-md">
-                {searchQuery.length >= 2
-                  ? 'Click "Search YouTube" to find videos'
-                  : "Type to search YouTube videos"}
-              </div>
-            )}
-          </div>
+          <LocalSearchResults 
+            videos={localVideos}
+            onSelectVideo={onSelectVideo} 
+          />
+          <YouTubeSearchResults 
+            videos={remoteVideos}
+            searchQuery={searchQuery}
+            isLoading={searchLoading}
+            onAddVideo={onAddVideo}
+            onSearch={handleSearch}
+            onClear={handleClearResults}
+          />
         </div>
       )}
-    </>
+    </form>
   );
 
   if (isDesktop) {
@@ -217,16 +251,7 @@ export default function AddVideoDialog({
           <DialogHeader>
             <DialogTitle>Search Video</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSearch} className="space-y-4">
-            <Input
-              data-autofocus
-              autoFocus
-              placeholder="Type keyword or paste YouTube link"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <SearchResults />
-          </form>
+          {searchContent}
         </DialogContent>
       </Dialog>
     );
@@ -248,16 +273,7 @@ export default function AddVideoDialog({
         <DrawerHeader>
           <DrawerTitle>Search Video</DrawerTitle>
         </DrawerHeader>
-        <form onSubmit={handleSearch} className="space-y-4">
-          <Input
-            data-autofocus
-            autoFocus
-            placeholder="Type keyword or paste YouTube link"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <SearchResults />
-        </form>
+        {searchContent}
       </DrawerContent>
     </Drawer>
   );
