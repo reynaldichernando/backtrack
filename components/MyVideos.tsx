@@ -14,7 +14,6 @@ export default function MyVideos({ videos, onSelectVideo, onDeleteVideo }: {
   const [pressedVideoId, setPressedVideoId] = useState<string | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout>();
   const scaleTimer = useRef<NodeJS.Timeout>();
-  const isLongPress = useRef(false);
 
   const handleDeleteVideo = (video: Video) => {
     onDeleteVideo(video);
@@ -22,38 +21,26 @@ export default function MyVideos({ videos, onSelectVideo, onDeleteVideo }: {
   }
 
   const startLongPress = (video: Video) => {
-    isLongPress.current = false;
-    
     // Start with no scale change
     setPressedVideoId(video.id);
     
-    // After 100ms, apply the scale up effect
+    // After 125ms, apply the scale effect
     scaleTimer.current = setTimeout(() => {
       setPressedVideoId(`${video.id}-scaled`);
     }, 125);
     
+    // After 500ms total, trigger the long press action
     longPressTimer.current = setTimeout(() => {
-      isLongPress.current = true;
       setSelectedVideo(video);
       setDialogOpen(true);
       setPressedVideoId(null);
     }, 500);
   };
 
-  const endLongPress = (video: Video) => {
-    clearTimeout(longPressTimer.current);
-    clearTimeout(scaleTimer.current);
-    setPressedVideoId(null);
-    if (!isLongPress.current) {
-      onSelectVideo(video);
-    }
-  };
-
   const cancelLongPress = () => {
     clearTimeout(longPressTimer.current);
     clearTimeout(scaleTimer.current);
     setPressedVideoId(null);
-    isLongPress.current = false;
   };
 
   return (
@@ -78,12 +65,12 @@ export default function MyVideos({ videos, onSelectVideo, onDeleteVideo }: {
             <div 
               className="flex space-x-3 items-center flex-1" 
               onTouchStart={() => startLongPress(video)}
-              onTouchEnd={() => endLongPress(video)}
+              onTouchEnd={cancelLongPress}
               onTouchCancel={cancelLongPress}
               onMouseDown={() => startLongPress(video)}
-              onMouseUp={() => endLongPress(video)}
+              onMouseUp={cancelLongPress}
               onMouseLeave={cancelLongPress}
-              onClick={(e) => e.preventDefault()}
+              onClick={() => onSelectVideo(video)}
             >
               <div className="relative aspect-video w-20 md:w-28 bg-gray-200 rounded-md">
                 <img src={video.thumbnail} alt={video.title} className="object-cover w-full h-full rounded-md" />
