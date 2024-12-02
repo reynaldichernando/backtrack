@@ -1,5 +1,6 @@
+import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { Serwist, CacheFirst } from "serwist";
+import { Serwist } from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -13,16 +14,8 @@ const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
-  navigationPreload: false,
-  runtimeCaching: [
-    {
-      // Cache everything for offline access
-      matcher: () => true,
-      handler: new CacheFirst({
-        cacheName: "app-cache"
-      }),
-    },
-  ],
+  navigationPreload: true,
+  runtimeCaching: defaultCache,
 });
 
 serwist.addEventListeners();

@@ -1,32 +1,16 @@
 {
   "name": "BackTrack",
   "short_name": "BackTrack",
-  "description": "Standalone YouTube Media Library",
   "icons": [
     {
       "src": "144.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ],
   "screenshots": [],
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "theme_color": "#000000",
-  "background_color": "#000000",
-  "prefer_related_applications": false,
-  "display_override": ["standalone", "fullscreen"],
-  "categories": ["entertainment", "music"],
-  "launch_handler": {
-    "client_mode": ["focus-existing", "auto"]
-  },
-  "scope": "/"
+  "orientation": "portrait"
 }
