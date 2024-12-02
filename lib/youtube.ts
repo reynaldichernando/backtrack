@@ -25,35 +25,6 @@ export interface VideoInfo {
   formats: FormatInfo[];
 }
 
-export async function fetchVideoInfoRaw(videoId: string): Promise<unknown> {
-  // prettier-ignore
-  const res = await corsFetch("https://www.youtube.com/youtubei/v1/player", {
-    method: "POST",
-    body: JSON.stringify({
-      videoId,
-      context: {
-        client: {
-          clientName: "ANDROID",
-          clientVersion: "18.11.34",
-          androidSdkVersion: 30,
-          hl: "en",
-        },
-      },
-    }),
-    headers: {
-      "Origin": "https://www.youtube.com",
-      "content-type": "application/json",
-      "X-YouTube-Client-Name": "3",
-      "X-YouTube-Client-Version": "18.11.34",
-      "x-corsfix-headers": JSON.stringify({
-        "user-agent": "com.google.android.youtube/18.11.34 (Linux; U; Android 11) gzip",
-        "origin": "https://www.youtube.com",
-      }),
-    }
-  });
-  return JSON.parse(await res.text());
-}
-
 const RAW_INFO_SCHEMA = z.object({
   videoDetails: z.object({
     videoId: z.string(),
@@ -81,6 +52,35 @@ const RAW_INFO_SCHEMA = z.object({
       .array(),
   }),
 });
+
+async function fetchVideoInfoRaw(videoId: string): Promise<unknown> {
+  const res = await corsFetch("https://www.youtube.com/youtubei/v1/player", {
+    method: "POST",
+    body: JSON.stringify({
+      videoId,
+      context: {
+        client: {
+          clientName: "ANDROID",
+          clientVersion: "18.11.34",
+          androidSdkVersion: 30,
+          hl: "en",
+        },
+      },
+    }),
+    headers: {
+      Origin: "https://www.youtube.com",
+      "content-type": "application/json",
+      "X-YouTube-Client-Name": "3",
+      "X-YouTube-Client-Version": "18.11.34",
+      "x-corsfix-headers": JSON.stringify({
+        "user-agent":
+          "com.google.android.youtube/18.11.34 (Linux; U; Android 11) gzip",
+        origin: "https://www.youtube.com",
+      }),
+    },
+  });
+  return JSON.parse(await res.text());
+}
 
 export async function fetchVideoInfo(videoId: string): Promise<VideoInfo> {
   const raw = await fetchVideoInfoRaw(videoId);
@@ -112,33 +112,49 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoInfo> {
 async function downloadChunk(
   url: string,
   range: string,
-  retries = 3
+  videoId: string,
+  format_id: string,
+  retries = 5
 ): Promise<ArrayBuffer> {
-  const TIMEOUT_MS = 15000;
+  const TIMEOUT_MS = 18000;
 
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const controller = new AbortController();
-      
-      // Create a promise that rejects after timeout
+
       const timeoutPromise = new Promise<ArrayBuffer>((_, reject) => {
         setTimeout(() => {
           controller.abort();
-          reject(new Error('Request timed out'));
+          reject(new Error("Request timed out"));
         }, TIMEOUT_MS);
       });
 
-      // Create the fetch promise including the arrayBuffer() call
-      const fetchPromise = corsFetch(url, {
+      const response = await corsFetch(url, {
         headers: { range },
         signal: controller.signal,
-      }).then(response => response.arrayBuffer());
+      });
 
-      // Race between timeout and fetch
-      return await Promise.race([fetchPromise, timeoutPromise]);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
+      return await Promise.race([response.arrayBuffer(), timeoutPromise]);
     } catch (error) {
       if (attempt === retries - 1) throw error;
+
+      // Get fresh video info and URL before retrying
+      try {
+        const freshVideoInfo = await fetchVideoInfo(videoId);
+        const freshFormat = freshVideoInfo.formats.find(
+          (f) => f.format_id === format_id
+        );
+        if (freshFormat) {
+          url = freshFormat.url;
+          console.log("Got fresh URL for retry");
+        }
+      } catch (refreshError) {
+        console.error("Failed to refresh video URL:", refreshError);
+      }
       await new Promise((resolve) =>
         setTimeout(resolve, Math.pow(2, attempt) * 1000)
       );
@@ -147,46 +163,48 @@ async function downloadChunk(
   throw new Error("Failed to download chunk after all retries");
 }
 
-export async function downloadMedia(
-  id: string,
-  type: string,
-  quality: string = "medium"
+function findFormat(
+  formats: FormatInfo[],
+  isVideo: boolean,
+  quality?: string
+): FormatInfo | null {
+  const filtered = formats.filter(
+    (f) =>
+      f.ext === "webm" &&
+      (isVideo
+        ? f.vcodec !== "none" && f.quality === quality
+        : f.acodec !== "none")
+  );
+
+  if (filtered.length === 0 || !filtered[0].filesize) {
+    return null;
+  }
+
+  return isVideo
+    ? filtered[0]
+    : filtered.sort((a, b) => b.filesize! - a.filesize!)[0];
+}
+
+async function downloadFormat(
+  format: FormatInfo | null,
+  videoId: string
 ): Promise<ArrayBuffer | null> {
-  const videoInfo = await fetchVideoInfo(id);
-  let formats = videoInfo.formats;
+  if (!format) return null;
 
-  if (type == "video") {
-    formats = videoInfo.formats.filter(
-      (f) => f.ext === "webm" && f.vcodec !== "none" && f.quality === quality
-    );
-  } else if (type == "audio") {
-    formats = videoInfo.formats
-      .filter((f) => f.ext === "webm" && f.acodec !== "none")
-      .sort((a, b) => b.filesize! - a.filesize!);
-  }
-
-  if (formats.length === 0) {
-    return null;
-  }
-
-  const format = formats[0];
-
-  if (!format.filesize) {
-    return null;
-  }
-
-  const CHUNK_SIZE = 2 * 1024 * 1024;
+  const CHUNK_SIZE = 3 * 1024 * 1024;
   const downloadPromises: Promise<ArrayBuffer>[] = [];
 
-  for (let start = 0; start < format.filesize; start += CHUNK_SIZE) {
-    const end = Math.min(start + CHUNK_SIZE, format.filesize);
+  for (let start = 0; start < format.filesize!; start += CHUNK_SIZE) {
+    const end = Math.min(start + CHUNK_SIZE, format.filesize!);
     const range = `bytes=${start}-${end - 1}`;
 
     downloadPromises.push(
-      downloadChunk(format.url, range).catch((error) => {
-        console.error(`Failed to download chunk ${start}-${end}:`, error);
-        throw error; // Re-throw to trigger the catch block below
-      })
+      downloadChunk(format.url, range, videoId, format.format_id).catch(
+        (error) => {
+          console.error(`Failed to download chunk ${start}-${end}:`, error);
+          throw error;
+        }
+      )
     );
   }
 
@@ -197,4 +215,31 @@ export async function downloadMedia(
     console.error("Download failed:", error);
     return null;
   }
+}
+
+export async function downloadVideo(
+  id: string,
+  quality: string = "medium"
+): Promise<ArrayBuffer | null> {
+  const videoInfo = await fetchVideoInfo(id);
+  return downloadFormat(findFormat(videoInfo.formats, true, quality), id);
+}
+
+export async function downloadAudio(id: string): Promise<ArrayBuffer | null> {
+  const videoInfo = await fetchVideoInfo(id);
+  return downloadFormat(findFormat(videoInfo.formats, false), id);
+}
+
+export async function downloadMedia(
+  id: string,
+  quality: string = "medium"
+): Promise<{ video: ArrayBuffer | null; audio: ArrayBuffer | null }> {
+  const videoInfo = await fetchVideoInfo(id);
+
+  const [video, audio] = await Promise.all([
+    downloadFormat(findFormat(videoInfo.formats, true, quality), id),
+    downloadFormat(findFormat(videoInfo.formats, false), id),
+  ]);
+
+  return { video, audio };
 }

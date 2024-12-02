@@ -3,12 +3,12 @@ import { Video } from "@/lib/model/Video";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { FastForward, Pause, Play, Rewind } from "lucide-react";
-import { downloadMedia } from "@/lib/youtube";
 import { MediaBinaryData } from "@/lib/model/MediaBinaryData";
 import Spinner from "./ui/spinner";
 import * as Slider from "@radix-ui/react-slider";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerPortal, DrawerTitle } from "./ui/drawer";
+import { downloadMedia } from "@/lib/youtube";
 
 export default function Player({
   children,
@@ -70,12 +70,9 @@ export default function Player({
       setLoading(true);
 
       try {
-        const [videoBuffer, audioBuffer] = await Promise.all([
-          downloadMedia(currentVideo.id, "video"),
-          downloadMedia(currentVideo.id, "audio"),
-        ]);
+        const { video, audio } = await downloadMedia(currentVideo.id);
 
-        if (!videoBuffer || !audioBuffer) {
+        if (!video || !audio) {
           setLoading(false);
           updateMediaSources("", "");
           toast.dismiss(toastId);
@@ -83,10 +80,10 @@ export default function Player({
           return;
         }
 
-        await saveMediaBinary(currentVideo.id, videoBuffer, audioBuffer);
+        await saveMediaBinary(currentVideo.id, video, audio);
 
-        const videoBlob = new Blob([videoBuffer], { type: "video/webm" });
-        const audioBlob = new Blob([audioBuffer], { type: "audio/webm" });
+        const videoBlob = new Blob([video], { type: "video/webm" });
+        const audioBlob = new Blob([audio], { type: "audio/webm" });
 
         const videoUrl = URL.createObjectURL(videoBlob);
         const audioUrl = URL.createObjectURL(audioBlob);
