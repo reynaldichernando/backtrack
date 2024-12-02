@@ -6,11 +6,37 @@ import { FastForward, Pause, Play, Rewind } from "lucide-react";
 import { downloadMedia } from "@/lib/youtube";
 import { MediaBinaryData } from "@/lib/model/MediaBinaryData";
 import Spinner from "./ui/spinner";
-import * as Slider from '@radix-ui/react-slider';
+import * as Slider from "@radix-ui/react-slider";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerPortal, DrawerTitle } from "./ui/drawer";
 
-export default function Player({ children, currentVideo, currentView, isPlaying, position, duration, onBack, onTogglePlay, onClickPrevTrack, onClickNextTrack, updateMediaSources, onSeekTo }: { children: React.ReactNode, currentVideo: Video | null, currentView: string, isPlaying: boolean, position: number, duration: number, onBack: () => void, onTogglePlay: () => void, onClickPrevTrack: () => void, onClickNextTrack: () => void, updateMediaSources: (videoSrc: string, audioSrc: string) => void, onSeekTo: (time: number) => void }) {
+export default function Player({
+  children,
+  currentVideo,
+  currentView,
+  isPlaying,
+  position,
+  duration,
+  onBack,
+  onTogglePlay,
+  onClickPrevTrack,
+  onClickNextTrack,
+  updateMediaSources,
+  onSeekTo,
+}: {
+  children: React.ReactNode;
+  currentVideo: Video | null;
+  currentView: string;
+  isPlaying: boolean;
+  position: number;
+  duration: number;
+  onBack: () => void;
+  onTogglePlay: () => void;
+  onClickPrevTrack: () => void;
+  onClickNextTrack: () => void;
+  updateMediaSources: (videoSrc: string, audioSrc: string) => void;
+  onSeekTo: (time: number) => void;
+}) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [seeking, setSeeking] = useState(false);
@@ -32,44 +58,47 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
     const media: MediaBinaryData = await getMediaBinary(currentVideo.id);
 
     if (media) {
-      const videoBlob = new Blob([media.video], { type: 'video/webm' });
-      const audioBlob = new Blob([media.audio], { type: 'audio/webm' });
+      const videoBlob = new Blob([media.video], { type: "video/webm" });
+      const audioBlob = new Blob([media.audio], { type: "audio/webm" });
 
       const videoUrl = URL.createObjectURL(videoBlob);
       const audioUrl = URL.createObjectURL(audioBlob);
 
       updateMediaSources(videoUrl, audioUrl);
     } else {
-      toast('Downloading video...');
+      const toastId = toast.loading("Downloading video...");
       setLoading(true);
 
       try {
         const [videoBuffer, audioBuffer] = await Promise.all([
-          downloadMedia(currentVideo.id, 'video'),
-          downloadMedia(currentVideo.id, 'audio')
+          downloadMedia(currentVideo.id, "video"),
+          downloadMedia(currentVideo.id, "audio"),
         ]);
 
         if (!videoBuffer || !audioBuffer) {
           setLoading(false);
-          updateMediaSources('', '');
-          toast('Failed to download video');
-          return
+          updateMediaSources("", "");
+          toast.dismiss(toastId);
+          toast("Failed to download video");
+          return;
         }
 
         await saveMediaBinary(currentVideo.id, videoBuffer, audioBuffer);
 
-        const videoBlob = new Blob([videoBuffer], { type: 'video/webm' });
-        const audioBlob = new Blob([audioBuffer], { type: 'audio/webm' });
+        const videoBlob = new Blob([videoBuffer], { type: "video/webm" });
+        const audioBlob = new Blob([audioBuffer], { type: "audio/webm" });
 
         const videoUrl = URL.createObjectURL(videoBlob);
         const audioUrl = URL.createObjectURL(audioBlob);
 
         updateMediaSources(videoUrl, audioUrl);
-        toast('Video saved successfully');
+        toast.dismiss(toastId);
+        toast("Video saved successfully");
       } catch (error) {
         setLoading(false);
-        updateMediaSources('', '');
-        toast('Failed to download video');
+        updateMediaSources("", "");
+        toast.dismiss(toastId);
+        toast("Failed to download video");
         console.error(error);
       } finally {
         setLoading(false);
@@ -81,38 +110,37 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     if (isNaN(minutes) || isNaN(seconds)) {
-      return '--:--';
+      return "--:--";
     }
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
+    return `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
+  };
 
   const handleSeekChange = (time: number) => {
     setSeeking(true);
     setTempPosition(time);
-  }
+  };
 
   const handleSeekEnd = (time: number) => {
     onSeekTo(time);
     setTimeout(() => {
       setSeeking(false);
     }, 500);
-  }
+  };
 
   return (
-    <Drawer
-      open={open}
-      onOpenChange={onBack}
-    >
+    <Drawer open={open} onOpenChange={onBack}>
       <DrawerPortal>
         <DrawerContent>
           <div className="flex flex-col w-full h-screen bg-background">
             <div className="flex flex-col h-full overflow-auto">
               <div className="flex flex-col flex-grow justify-evenly items-center">
                 <div className={"p-4 md:w-2/3 mx-auto"}>
-                  <div className="relative">
-                    {children}
-                  </div>
-                  <DrawerTitle className="font-bold text-xl my-4 line-clamp-1">{currentVideo?.title}</DrawerTitle>
+                  <div className="relative">{children}</div>
+                  <DrawerTitle className="font-bold text-xl my-4 line-clamp-1">
+                    {currentVideo?.title}
+                  </DrawerTitle>
                   <p>{currentVideo?.author}</p>
                 </div>
                 <Slider.Root
@@ -125,20 +153,47 @@ export default function Player({ children, currentVideo, currentView, isPlaying,
                   <Slider.Track className="bg-secondary relative grow rounded-full h-2">
                     <Slider.Range className="absolute bg-foreground rounded-full h-full" />
                     <div className="flex justify-between items-center mt-4">
-                      <span className="text-sm text-gray-500">{seeking ? getMinuteSecondPosition(tempPosition) : getMinuteSecondPosition(position)}</span>
-                      <span className="text-sm text-gray-500">{getMinuteSecondPosition(duration)}</span>
+                      <span className="text-sm text-gray-500">
+                        {seeking
+                          ? getMinuteSecondPosition(tempPosition)
+                          : getMinuteSecondPosition(position)}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {getMinuteSecondPosition(duration)}
+                      </span>
                     </div>
                   </Slider.Track>
                   <Slider.Thumb />
                 </Slider.Root>
                 <div className="flex justify-center space-x-16 mb-8">
-                  <Button size="icon" variant="ghost" onClick={onClickPrevTrack} className="transition-all duration-300 ease-in-out active:scale-75">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={onClickPrevTrack}
+                    className="transition-all duration-300 ease-in-out active:scale-75"
+                  >
                     <Rewind className="size-8" fill="currentColor" />
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={onTogglePlay} className="transition-all duration-300 ease-in-out active:scale-75">
-                    {loading ? <Spinner className="size-8" /> : isPlaying ? <Pause className="size-8" fill="currentColor" /> : <Play className="size-8" fill="currentColor" />}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={onTogglePlay}
+                    className="transition-all duration-300 ease-in-out active:scale-75"
+                  >
+                    {loading ? (
+                      <Spinner className="size-8" />
+                    ) : isPlaying ? (
+                      <Pause className="size-8" fill="currentColor" />
+                    ) : (
+                      <Play className="size-8" fill="currentColor" />
+                    )}
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={onClickNextTrack} className="transition-all duration-300 ease-in-out active:scale-75">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={onClickNextTrack}
+                    className="transition-all duration-300 ease-in-out active:scale-75"
+                  >
                     <FastForward className="size-8" fill="currentColor" />
                   </Button>
                 </div>

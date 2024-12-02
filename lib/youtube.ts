@@ -109,17 +109,39 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoInfo> {
   };
 }
 
-async function downloadChunk(url: string, range: string, retries = 3): Promise<ArrayBuffer> {
+async function downloadChunk(
+  url: string,
+  range: string,
+  retries = 3
+): Promise<ArrayBuffer> {
+  const TIMEOUT_MS = 15000;
+
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      const response = await corsFetch(url, {
-        headers: { range },
+      const controller = new AbortController();
+      
+      // Create a promise that rejects after timeout
+      const timeoutPromise = new Promise<ArrayBuffer>((_, reject) => {
+        setTimeout(() => {
+          controller.abort();
+          reject(new Error('Request timed out'));
+        }, TIMEOUT_MS);
       });
-      return await response.arrayBuffer();
+
+      // Create the fetch promise including the arrayBuffer() call
+      const fetchPromise = corsFetch(url, {
+        headers: { range },
+        signal: controller.signal,
+      }).then(response => response.arrayBuffer());
+
+      // Race between timeout and fetch
+      return await Promise.race([fetchPromise, timeoutPromise]);
+
     } catch (error) {
       if (attempt === retries - 1) throw error;
-      // Wait a bit before retrying (exponential backoff)
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      await new Promise((resolve) =>
+        setTimeout(resolve, Math.pow(2, attempt) * 1000)
+      );
     }
   }
   throw new Error("Failed to download chunk after all retries");
@@ -161,7 +183,7 @@ export async function downloadMedia(
     const range = `bytes=${start}-${end - 1}`;
 
     downloadPromises.push(
-      downloadChunk(format.url, range).catch(error => {
+      downloadChunk(format.url, range).catch((error) => {
         console.error(`Failed to download chunk ${start}-${end}:`, error);
         throw error; // Re-throw to trigger the catch block below
       })
@@ -172,7 +194,7 @@ export async function downloadMedia(
     const chunks = await Promise.all(downloadPromises);
     return new Blob(chunks).arrayBuffer();
   } catch (error) {
-    console.error('Download failed:', error);
+    console.error("Download failed:", error);
     return null;
   }
 }
