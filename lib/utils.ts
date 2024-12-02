@@ -28,7 +28,7 @@ export function generateThumbnailUrl(videoId: string | null): string {
   if (!videoId) {
     return "";
   }
-  return `https://i.ytimg.com/vi_webp/${videoId}/maxresdefault.webp`;
+  return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 }
 
 /**
