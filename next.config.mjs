@@ -7,17 +7,16 @@ const withSerwist = withSerwistInit({
   // use something else that works, such as "service-worker/index.ts".
   swSrc: "app/sw.ts",
   swDest: "public/sw.js",
-  cacheOnNavigation: true,
 });
 
 const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '*',
-        port: '',
-        pathname: '**',
+        protocol: "https",
+        hostname: "*",
+        port: "",
+        pathname: "**",
       },
     ],
   },
