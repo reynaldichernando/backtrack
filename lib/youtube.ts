@@ -12,6 +12,7 @@ export interface FormatInfo {
   width: number | null;
   height: number | null;
   quality: string | null;
+  audioIsDefault?: boolean;
 }
 
 export interface VideoInfo {
@@ -33,7 +34,6 @@ const RAW_INFO_SCHEMA = z.object({
     shortDescription: z.string(),
   }),
   streamingData: z.object({
-    // formats: z.object({}).array(), // TODO
     adaptiveFormats: z
       .object({
         itag: z.number(),
@@ -41,13 +41,17 @@ const RAW_INFO_SCHEMA = z.object({
         mimeType: z.string(),
         width: z.number().optional(),
         height: z.number().optional(),
-        // TODO: support undefined contentLength
         contentLength: z
           .string()
           .refine((s) => s.match(/^\d+$/))
           .transform(Number)
           .optional(),
         quality: z.string().optional(),
+        audioTrack: z.object({
+          displayName: z.string(),
+          id: z.string(),
+          audioIsDefault: z.boolean(),
+        }).optional(),
       })
       .array(),
   }),
@@ -105,6 +109,7 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoInfo> {
       width: f.width ?? null,
       height: f.height ?? null,
       quality: f.quality ?? null,
+      audioIsDefault: f.audioTrack?.audioIsDefault,
     })),
   };
 }
@@ -180,9 +185,15 @@ function findFormat(
     return null;
   }
 
-  return isVideo
-    ? filtered[0]
-    : filtered.sort((a, b) => b.filesize! - a.filesize!)[0];
+  if (isVideo) {
+    return filtered[0];
+  } else {
+    const defaultTrack = filtered.find((f) => f.audioIsDefault);
+    if (defaultTrack) {
+      return defaultTrack;
+    }
+    return filtered.sort((a, b) => b.filesize! - a.filesize!)[0];
+  }
 }
 
 interface DownloadProgress {
