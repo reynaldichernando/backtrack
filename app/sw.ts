@@ -16,17 +16,6 @@ declare const self: ServiceWorkerGlobalScope;
 
 const CACHE_NAME = "offline-v1";
 
-// Cache the root page during installation
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    (async () => {
-      const cache = await caches.open(CACHE_NAME);
-      // Setting {cache: 'reload'} ensures the response isn't fulfilled from HTTP cache
-      await cache.add(new Request("/", { cache: "reload" }));
-    })()
-  );
-});
-
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
@@ -38,19 +27,16 @@ const serwist = new Serwist({
       matcher: ({ request }) => request.mode === "navigate",
       handler: async ({ event, request }) => {
         try {
-          // First, try navigation preload response if supported
+          // Try to use navigation preload if available
           const preloadResponse = await (event as FetchEvent).preloadResponse;
           if (preloadResponse) {
             return preloadResponse;
           }
 
           // Always try network first
-          const networkResponse = await fetch(request);
-          return networkResponse;
+          return await fetch(request);
         } catch (error) {
-          console.log("Fetch failed; returning offline page instead.", error);
-          
-          // Return cached root page on network failure
+          // On network failure, fall back to cached root page
           const cache = await caches.open(CACHE_NAME);
           const cachedResponse = await cache.match("/");
           return cachedResponse || Response.redirect("/", 302);
@@ -58,6 +44,16 @@ const serwist = new Serwist({
       },
     } satisfies RuntimeCaching,
   ],
+});
+
+// Cache the root page during installation
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.add(new Request("/", { cache: "reload" }));
+    })()
+  );
 });
 
 serwist.addEventListeners();
