@@ -41,30 +41,22 @@ export default function Main() {
 
   const mediaHandlers = {
     onPlay: () => {
-      videoRef.current?.play();
       audioRef.current?.play();
       setIsPlaying(true);
       navigator.mediaSession.playbackState = "playing";
     },
     onPause: () => {
-      videoRef.current?.pause();
       audioRef.current?.pause();
       setIsPlaying(false);
       navigator.mediaSession.playbackState = "paused";
     },
     onStop: () => {
-      if (videoRef.current && audioRef.current) {
-        videoRef.current.pause();
-        audioRef.current.pause();
-        videoRef.current.currentTime = 0;
-        audioRef.current.currentTime = 0;
-      }
+      audioRef.current?.pause();
       setIsPlaying(false);
     },
     onPrev: () => handleTrackChange("prev"),
     onNext: () => handleTrackChange("next"),
     onSeek: (time: number) => {
-      videoRef.current && (videoRef.current.currentTime = time);
       audioRef.current && (audioRef.current.currentTime = time);
     },
   };
@@ -107,8 +99,8 @@ export default function Main() {
         audio.paused ? video.pause() : video.play();
       }
 
-      setPosition(video.currentTime);
-      setDuration(video.duration);
+      setPosition(audio.currentTime);
+      setDuration(audio.duration);
     }, 300);
 
     return () => clearInterval(interval);
@@ -206,7 +198,7 @@ export default function Main() {
 
   return (
     <>
-      <div className="flex flex-col h-screen">
+      <div className="flex flex-col h-svh">
         <main className="flex flex-col md:flex-row flex-1 overflow-y-auto md:items-start min-h-screen-safe mt-safe ml-safe mr-safe">
           <div className="md:sticky top-0 left-0 w-full md:w-1/4 p-4 space-y-2">
             <div className="flex items-center space-x-2 my-3">
