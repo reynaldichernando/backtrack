@@ -47,11 +47,13 @@ const RAW_INFO_SCHEMA = z.object({
           .transform(Number)
           .optional(),
         quality: z.string().optional(),
-        audioTrack: z.object({
-          displayName: z.string(),
-          id: z.string(),
-          audioIsDefault: z.boolean(),
-        }).optional(),
+        audioTrack: z
+          .object({
+            displayName: z.string(),
+            id: z.string(),
+            audioIsDefault: z.boolean(),
+          })
+          .optional(),
       })
       .array(),
   }),
@@ -72,6 +74,7 @@ async function fetchVideoInfoRaw(videoId: string): Promise<unknown> {
       },
     }),
     headers: {
+      "Content-Type": "application/json",
       "X-YouTube-Client-Name": "3",
       "X-YouTube-Client-Version": "18.11.34",
       "x-corsfix-headers": JSON.stringify({
@@ -269,7 +272,11 @@ export async function downloadMedia(
   const videoInfo = await fetchVideoInfo(id);
 
   const [video, audio] = await Promise.all([
-    downloadFormat(findFormat(videoInfo.formats, true, quality), id, onVideoProgress),
+    downloadFormat(
+      findFormat(videoInfo.formats, true, quality),
+      id,
+      onVideoProgress
+    ),
     downloadFormat(findFormat(videoInfo.formats, false), id, onAudioProgress),
   ]);
 
@@ -286,44 +293,49 @@ export interface SearchResult {
   duration: string;
 }
 
-export async function searchYoutubeVideos(query: string): Promise<SearchResult[]> {
+export async function searchYoutubeVideos(
+  query: string
+): Promise<SearchResult[]> {
   const res = await corsFetch("https://www.youtube.com/youtubei/v1/search", {
     method: "POST",
     body: JSON.stringify({
       context: {
         client: {
-          clientName: "ANDROID",
-          clientVersion: "18.11.34",
+          clientName: "WEB",
+          clientVersion: "2.20231121.08.00",
         },
       },
       query,
     }),
     headers: {
+      "Content-Type": "application/json",
       "x-corsfix-headers": JSON.stringify({
-        "user-agent":
-          "com.google.android.youtube/18.11.34 (Linux; U; Android 11) gzip",
         origin: "https://www.youtube.com",
       }),
     },
   });
 
   const data = await res.json();
-  const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents || [];
+  const contents =
+    data.contents?.twoColumnSearchResultsRenderer?.primaryContents
+      ?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents || [];
 
-  return contents
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .filter((item: any) => item.videoRenderer)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .map((item: any) => {
-      const video = item.videoRenderer;
-      return {
-        videoId: video.videoId,
-        title: video.title.runs[0].text,
-        thumbnail: video.thumbnail.thumbnails[0].url,
-        channelTitle: video.ownerText.runs[0].text,
-        publishedTimeText: video.publishedTimeText?.simpleText || "",
-        viewCount: video.viewCountText?.simpleText || "0 views",
-        duration: video.lengthText?.simpleText || "",
-      };
-    });
+  return (
+    contents
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((item: any) => item.videoRenderer)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((item: any) => {
+        const video = item.videoRenderer;
+        return {
+          videoId: video.videoId,
+          title: video.title.runs[0].text,
+          thumbnail: video.thumbnail.thumbnails[0].url,
+          channelTitle: video.ownerText.runs[0].text,
+          publishedTimeText: video.publishedTimeText?.simpleText || "",
+          viewCount: video.viewCountText?.simpleText || "0 views",
+          duration: video.lengthText?.simpleText || "",
+        };
+      })
+  );
 }
