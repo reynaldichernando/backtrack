@@ -132,6 +132,11 @@ export default function Main() {
   };
 
   const handleSelectVideo = async (video: Video) => {
+    if (video.id === currentVideo?.id) {
+      setCurrentView("detail");
+      return;
+    }
+
     try {
       const { videoUrl, audioUrl } = await getMedia(video.id, video.title);
       setVideoSrc(videoUrl);
