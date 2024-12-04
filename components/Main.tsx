@@ -8,7 +8,7 @@ import {
   getMediaBinary,
 } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
-import { corsFetch, generateThumbnailUrl } from "@/lib/utils";
+import { corsFetch } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import AddVideoDialog from "./AddVideoDialog";
 import MiniPlayer from "./MiniPlayer";
@@ -66,10 +66,13 @@ export default function Main() {
     onSeek: (time: number) => {
       videoRef.current && (videoRef.current.currentTime = time);
       audioRef.current && (audioRef.current.currentTime = time);
-    }
+    },
   };
 
-  const { updateMetadata, setupHandlers } = useMediaSession(currentVideo, mediaHandlers);
+  const { updateMetadata, setupHandlers } = useMediaSession(
+    currentVideo,
+    mediaHandlers
+  );
 
   const handleTogglePlay = () => {
     if (isPlaying) {
@@ -81,7 +84,7 @@ export default function Main() {
 
   const handleAudioPlay = (event: React.SyntheticEvent<HTMLAudioElement>) => {
     if (!currentVideo) return;
-    
+
     updateMetadata();
     setupHandlers();
     setIsPlaying(true);
@@ -93,7 +96,7 @@ export default function Main() {
     const interval = setInterval(() => {
       const video = videoRef.current;
       const audio = audioRef.current;
-      
+
       if (!video || !audio || video.duration < 0 || audio.duration < 0) return;
 
       if (Math.abs(video.currentTime - audio.currentTime) > 0.3) {
@@ -116,13 +119,17 @@ export default function Main() {
   }, []);
 
   const handleTrackChange = async (direction: "prev" | "next") => {
-    const currentIndex = videos.findIndex(v => v.id === currentVideo?.id);
+    const currentIndex = videos.findIndex((v) => v.id === currentVideo?.id);
     const nextVideo = await findNextDownloadedVideo(currentIndex, direction);
-    
+
     if (nextVideo) {
       handleSelectVideo(nextVideo);
     } else {
-      toast.error(`No ${direction === "prev" ? "previous" : "more"} downloaded videos available`);
+      toast.error(
+        `No ${
+          direction === "prev" ? "previous" : "more"
+        } downloaded videos available`
+      );
     }
   };
 
@@ -146,7 +153,7 @@ export default function Main() {
   };
 
   const handleAddVideo = async (video: Video) => {
-    const thumbnailResponse = await corsFetch(generateThumbnailUrl(video.id));
+    const thumbnailResponse = await corsFetch(video.thumbnail);
     const thumbnailBuffer =
       thumbnailResponse.status === 404
         ? await (await fetch(video.thumbnail)).arrayBuffer()

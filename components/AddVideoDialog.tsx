@@ -1,18 +1,16 @@
 "use client";
 
 import { Video } from "@/lib/model/Video";
-import { search } from "@/lib/search";
 import {
   isYoutubeUrl,
   extractVideoId,
   generateThumbnailUrl,
 } from "@/lib/utils";
-import { fetchVideoInfo } from "@/lib/youtube";
+import { fetchVideoInfo, SearchResult, searchYoutubeVideos } from "@/lib/youtube";
 import { Search } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { SearchResultItem } from "@/lib/model/SearchResultItem";
 import Spinner from "./ui/spinner";
 import {
   Drawer,
@@ -173,15 +171,15 @@ export default function AddVideoDialog({
           } as Video,
         ]);
       } else {
-        const res = await search({ query: `${searchQuery} site:youtube.com` });
+        const res = await searchYoutubeVideos(searchQuery);
         setRemoteVideos(
-          res.results.map((searchResult: SearchResultItem) => {
-            const videoId = extractVideoId(searchResult.url);
+          res.map((searchResult: SearchResult) => {
+            const videoId = searchResult.videoId;
             return {
               id: videoId,
               title: searchResult.title,
-              thumbnail: searchResult.images.large,
-              author: searchResult.uploader,
+              thumbnail: searchResult.thumbnail,
+              author: searchResult.channelTitle,
             } as Video;
           })
         );
