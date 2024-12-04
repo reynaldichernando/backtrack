@@ -14,7 +14,7 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: [
+  runtimeCaching: process.env.NODE_ENV === 'development' ? [] : [
     {
       matcher: ({ request }) => request.destination === "style",
       handler: new StaleWhileRevalidate(),
