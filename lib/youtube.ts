@@ -122,7 +122,7 @@ async function downloadChunk(
   format_id: string,
   retries = 5
 ): Promise<ArrayBuffer> {
-  const TIMEOUT_MS = 18000;
+  const TIMEOUT_MS = 10000;
 
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
