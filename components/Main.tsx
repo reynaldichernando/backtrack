@@ -138,7 +138,10 @@ export default function Main() {
     }
 
     try {
-      const { videoUrl, audioUrl } = await getMedia(video.id, video.title);
+      const result = await getMedia(video.id, video.title);
+      if (!result) return;
+      
+      const { videoUrl, audioUrl } = result;
       setVideoSrc(videoUrl);
       setAudioSrc(audioUrl);
       setCurrentVideo(video);
