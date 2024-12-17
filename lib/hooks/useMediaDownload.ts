@@ -8,6 +8,14 @@ export function useMediaDownload() {
   const mediaProgressRef = useRef(0);
 
   const getMedia = async (videoId: string, title: string) => {
+    if (loading) {
+      toast.info(title, {
+        description: "Download already in progress",
+        duration: 2000
+      });
+      return;
+    }
+
     const media = await getMediaBinary(videoId);
 
     if (media) {
