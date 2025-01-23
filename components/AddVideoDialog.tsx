@@ -55,7 +55,7 @@ function LocalSearchResults({
               <img
                 src={video.thumbnail}
                 alt={video.title}
-                className="w-12 h-12 object-cover rounded"
+                className="w-12 h-12 object-cover rounded aspect-square"
               />
               <div>
                 <p className="font-medium line-clamp-1">{video.title}</p>
@@ -306,7 +306,7 @@ function VideoItem({ video, onClick }: { video: Video; onClick: () => void }) {
         <img
           src={video.thumbnail}
           alt={video.title}
-          className="w-12 h-12 object-cover rounded"
+          className="w-12 h-12 object-cover rounded aspect-square"
         />
         <div>
           <p className="font-medium line-clamp-1">{video.title}</p>
