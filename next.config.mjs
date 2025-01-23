@@ -10,6 +10,7 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig = {
+  output: "export",
   images: {
     remotePatterns: [
       {
