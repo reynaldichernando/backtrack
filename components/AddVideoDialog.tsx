@@ -75,10 +75,8 @@ function YouTubeSearchResults({
 
 export default function AddVideoDialog({
   onAddVideo,
-  onSelectVideo,
 }: {
   onAddVideo: (video: Video) => void;
-  onSelectVideo: (video: Video) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [remoteVideos, setRemoteVideos] = useState<Video[]>([]);

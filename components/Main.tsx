@@ -216,10 +216,7 @@ export default function Main() {
               />
               <h1 className="text-2xl font-bold">BackTrack</h1>
             </div>
-            <AddVideoDialog
-              onAddVideo={handleAddVideo}
-              onSelectVideo={handleSelectVideo}
-            />
+            <AddVideoDialog onAddVideo={handleAddVideo} />
           </div>
           <div className="w-full md:w-3/4 p-4 border-secondary flex-grow self-stretch">
             <MyVideos
