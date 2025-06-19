@@ -140,7 +140,7 @@ export default function Main() {
     try {
       const result = await getMedia(video.id, video.title);
       if (!result) return;
-      
+
       const { videoUrl, audioUrl } = result;
       setVideoSrc(videoUrl);
       setAudioSrc(audioUrl);
@@ -258,7 +258,7 @@ export default function Main() {
           src={videoSrc}
           ref={videoRef}
         >
-          <source src={videoSrc} type="video/webm" />
+          <source src={videoSrc} type="video/mp4" />
         </video>
       </Player>
       <audio

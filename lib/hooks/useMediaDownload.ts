@@ -1,5 +1,6 @@
 import { getMediaBinary, saveMediaBinary } from "@/lib/indexedDb";
 import { downloadMedia } from "@/lib/youtube";
+import { splitMediaToArrayBuffers } from "@/lib/ffmpeg";
 import { toast } from "sonner";
 import { useRef, useState } from "react";
 
@@ -11,7 +12,7 @@ export function useMediaDownload() {
     if (loading) {
       toast.info(title, {
         description: "Download already in progress",
-        duration: 2000
+        duration: 2000,
       });
       return;
     }
@@ -19,8 +20,8 @@ export function useMediaDownload() {
     const media = await getMediaBinary(videoId);
 
     if (media) {
-      const videoBlob = new Blob([media.video], { type: "video/webm" });
-      const audioBlob = new Blob([media.audio], { type: "audio/webm" });
+      const videoBlob = new Blob([media.video], { type: "video/mp4" });
+      const audioBlob = new Blob([media.audio], { type: "audio/m4a" });
 
       const videoUrl = URL.createObjectURL(videoBlob);
       const audioUrl = URL.createObjectURL(audioBlob);
@@ -35,51 +36,48 @@ export function useMediaDownload() {
     mediaProgressRef.current = 0;
 
     try {
-      const { video, audio } = await downloadMedia(
-        videoId,
-        "medium",
-        (progress) => {
-          const newProgress = (progress.percent + mediaProgressRef.current) / 2;
-          mediaProgressRef.current = newProgress;
-          toast.loading(title, {
-            id: toastId,
-            description: `Downloading... ${Math.round(newProgress)}%`
-          });
-        },
-        (progress) => {
-          const newProgress = (progress.percent + mediaProgressRef.current) / 2;
-          mediaProgressRef.current = newProgress;
-          toast.loading(title, {
-            id: toastId,
-            description: `Downloading... ${Math.round(newProgress)}%`
-          });
-        }
-      );
+      const { media } = await downloadMedia(videoId, (progress) => {
+        const newProgress = (progress.percent + mediaProgressRef.current) / 2;
+        mediaProgressRef.current = newProgress;
+        toast.loading(title, {
+          id: toastId,
+          description: `Downloading... ${Math.round(newProgress)}%`,
+        });
+      });
 
-      if (!video || !audio) {
+      if (!media) {
         throw new Error("Failed to download media");
       }
 
+      // Update toast to show processing
+      toast.loading(title, {
+        id: toastId,
+        description: "Processing media...",
+      });
+
+      // Split the media into video and audio using ffmpeg
+      const { video, audio } = await splitMediaToArrayBuffers(media);
+
       await saveMediaBinary(videoId, video, audio);
 
-      const videoBlob = new Blob([video], { type: "video/webm" });
-      const audioBlob = new Blob([audio], { type: "audio/webm" });
+      const videoBlob = new Blob([video], { type: "video/mp4" });
+      const audioBlob = new Blob([audio], { type: "audio/m4a" });
 
       const videoUrl = URL.createObjectURL(videoBlob);
       const audioUrl = URL.createObjectURL(audioBlob);
 
-      toast.success(title, { 
+      toast.success(title, {
         id: toastId,
         description: "Download complete",
-        duration: 2000
+        duration: 2000,
       });
 
       return { videoUrl, audioUrl };
     } catch (error) {
-      toast.error(title, { 
+      toast.error(title, {
         id: toastId,
         description: "Download failed",
-        duration: 2000
+        duration: 2000,
       });
       console.error(error);
       throw error;
@@ -91,6 +89,6 @@ export function useMediaDownload() {
 
   return {
     getMedia,
-    loading
+    loading,
   };
-} 
+}

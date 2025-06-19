@@ -34,7 +34,7 @@ const RAW_INFO_SCHEMA = z.object({
     shortDescription: z.string(),
   }),
   streamingData: z.object({
-    adaptiveFormats: z
+    formats: z
       .object({
         itag: z.number(),
         url: z.string(),
@@ -95,7 +95,7 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoInfo> {
     title: p.videoDetails.title,
     uploader: p.videoDetails.author,
     shortDescription: p.videoDetails.shortDescription,
-    formats: p.streamingData.adaptiveFormats.map((f) => ({
+    formats: p.streamingData.formats.map((f) => ({
       url: f.url,
       filesize: f.contentLength,
       format_id: f.itag.toString(),
@@ -122,7 +122,7 @@ async function downloadChunk(
   format_id: string,
   retries = 5
 ): Promise<ArrayBuffer> {
-  const TIMEOUT_MS = 10000;
+  const TIMEOUT_MS = 15000;
 
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
@@ -136,7 +136,7 @@ async function downloadChunk(
       });
 
       const response = await corsFetch(url, {
-        headers: { range },
+        headers: { "x-corsfix-headers": JSON.stringify({ range }) },
         signal: controller.signal,
       });
 
@@ -169,34 +169,6 @@ async function downloadChunk(
   throw new Error("Failed to download chunk after all retries");
 }
 
-function findFormat(
-  formats: FormatInfo[],
-  isVideo: boolean,
-  quality?: string
-): FormatInfo | null {
-  const filtered = formats.filter(
-    (f) =>
-      f.ext === "webm" &&
-      (isVideo
-        ? f.vcodec !== "none" && f.quality === quality
-        : f.acodec !== "none")
-  );
-
-  if (filtered.length === 0 || !filtered[0].filesize) {
-    return null;
-  }
-
-  if (isVideo) {
-    return filtered[0];
-  } else {
-    const defaultTrack = filtered.find((f) => f.audioIsDefault);
-    if (defaultTrack) {
-      return defaultTrack;
-    }
-    return filtered.sort((a, b) => b.filesize! - a.filesize!)[0];
-  }
-}
-
 interface DownloadProgress {
   downloaded: number;
   total: number;
@@ -214,7 +186,7 @@ async function downloadFormat(
 ): Promise<ArrayBuffer | null> {
   if (!format) return null;
 
-  const CHUNK_SIZE = 3 * 1024 * 1024;
+  const CHUNK_SIZE = 2 * 1024 * 1024;
   const downloadPromises: Promise<ArrayBuffer>[] = [];
   let downloadedSize = 0;
 
@@ -249,38 +221,18 @@ async function downloadFormat(
   }
 }
 
-export async function downloadVideo(
-  id: string,
-  quality: string = "medium"
-): Promise<ArrayBuffer | null> {
-  const videoInfo = await fetchVideoInfo(id);
-  return downloadFormat(findFormat(videoInfo.formats, true, quality), id);
-}
-
-export async function downloadAudio(id: string): Promise<ArrayBuffer | null> {
-  const videoInfo = await fetchVideoInfo(id);
-  return downloadFormat(findFormat(videoInfo.formats, false), id);
-}
-
 // Update the downloadMedia function to include progress tracking
 export async function downloadMedia(
   id: string,
-  quality: string = "medium",
-  onVideoProgress?: ProgressCallback,
-  onAudioProgress?: ProgressCallback
-): Promise<{ video: ArrayBuffer | null; audio: ArrayBuffer | null }> {
+  onMediaProgress?: ProgressCallback
+): Promise<{ media: ArrayBuffer | null }> {
   const videoInfo = await fetchVideoInfo(id);
 
-  const [video, audio] = await Promise.all([
-    downloadFormat(
-      findFormat(videoInfo.formats, true, quality),
-      id,
-      onVideoProgress
-    ),
-    downloadFormat(findFormat(videoInfo.formats, false), id, onAudioProgress),
+  const [media] = await Promise.all([
+    downloadFormat(videoInfo.formats[0], id, onMediaProgress),
   ]);
 
-  return { video, audio };
+  return { media };
 }
 
 export interface SearchResult {
