@@ -84,7 +84,9 @@ export default function MyVideos({
               </div>
               <div className="flex-1">
                 <p className="font-bold text-sm line-clamp-1">{video.title}</p>
-                <p className="text-xs">{video.author}</p>
+                <p className="text-xs">
+                  {video.author} &bull; {video.duration}
+                </p>
               </div>
             </div>
             <Dialog
@@ -118,7 +120,7 @@ export default function MyVideos({
                       <div className="flex-1">
                         <p className="font-semibold text-sm">{video.title}</p>
                         <p className="text-sm text-muted-foreground">
-                          {video.author}
+                          {video.author} &bull; {video.duration}
                         </p>
                       </div>
                     </div>
