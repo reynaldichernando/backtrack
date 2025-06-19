@@ -280,16 +280,20 @@ export async function searchYoutubeVideos(query: string): Promise<Video[]> {
     data.contents?.twoColumnSearchResultsRenderer?.primaryContents
       ?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents || [];
 
-  return contents
-    .filter((item: any) => item.videoRenderer)
-    .map((item: any) => {
-      const video = item.videoRenderer;
-      return {
-        id: video.videoId,
-        title: video.title.runs[0].text,
-        thumbnail: video.thumbnail.thumbnails[0].url,
-        author: video.ownerText.runs[0].text,
-        duration: video.lengthText?.simpleText || "",
-      };
-    });
+  return (
+    contents
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((item: any) => item.videoRenderer)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((item: any) => {
+        const video = item.videoRenderer;
+        return {
+          id: video.videoId,
+          title: video.title.runs[0].text,
+          thumbnail: video.thumbnail.thumbnails[0].url,
+          author: video.ownerText.runs[0].text,
+          duration: video.lengthText?.simpleText || "",
+        };
+      })
+  );
 }
