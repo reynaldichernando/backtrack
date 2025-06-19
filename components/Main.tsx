@@ -15,11 +15,6 @@ import MiniPlayer from "./MiniPlayer";
 import Player from "./Player";
 import MyVideos from "./MyVideos";
 import { toast } from "sonner";
-import {
-  initializeSearchIndex,
-  addToSearchIndex,
-  removeFromSearchIndex,
-} from "@/lib/flexSearch";
 import { useMediaDownload } from "@/lib/hooks/useMediaDownload";
 import { useMediaSession } from "@/lib/hooks/useMediaSession";
 
@@ -128,7 +123,6 @@ export default function Main() {
   const loadVideos = async () => {
     const videos = await getAllVideos();
     setVideos(videos);
-    await initializeSearchIndex(videos);
   };
 
   const handleSelectVideo = async (video: Video) => {
@@ -166,7 +160,6 @@ export default function Main() {
     };
 
     await addVideo(newVideo);
-    await addToSearchIndex(newVideo);
     toast("Video added successfully");
     await loadVideos();
   };
@@ -174,7 +167,6 @@ export default function Main() {
   const handleDeleteVideo = async (video: Video) => {
     await deleteVideo(video.id);
     await deleteMediaBinary(video.id);
-    await removeFromSearchIndex(video.id);
     toast("Video deleted successfully");
     loadVideos();
   };

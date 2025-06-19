@@ -6,9 +6,13 @@ import {
   extractVideoId,
   generateThumbnailUrl,
 } from "@/lib/utils";
-import { fetchVideoInfo, SearchResult, searchYoutubeVideos } from "@/lib/youtube";
+import {
+  fetchVideoInfo,
+  SearchResult,
+  searchYoutubeVideos,
+} from "@/lib/youtube";
 import { Search } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import Spinner from "./ui/spinner";
@@ -27,47 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
-import { searchVideos } from "@/lib/flexSearch";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
-
-function LocalSearchResults({
-  videos,
-  onSelectVideo,
-}: {
-  videos: Video[];
-  onSelectVideo: (video: Video) => void;
-}) {
-  if (videos.length === 0) return null;
-
-  return (
-    <div>
-      <h3 className="text-sm font-medium text-muted-foreground mb-2">
-        From Your Library
-      </h3>
-      <div className="bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-        {videos.map((video) => (
-          <div
-            key={video.id}
-            className="p-2 hover:bg-accent cursor-pointer"
-            onClick={() => onSelectVideo(video)}
-          >
-            <div className="flex items-center space-x-2">
-              <img
-                src={video.thumbnail}
-                alt={video.title}
-                className="w-12 h-12 object-cover rounded aspect-square"
-              />
-              <div>
-                <p className="font-medium line-clamp-1">{video.title}</p>
-                <p className="text-sm text-muted-foreground">{video.author}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function YouTubeSearchResults({
   videos,
@@ -75,38 +39,26 @@ function YouTubeSearchResults({
   isLoading,
   onAddVideo,
   onSearch,
-  onClear,
 }: {
   videos: Video[];
   searchQuery: string;
   isLoading: boolean;
   onAddVideo: (video: Video) => void;
   onSearch: () => void;
-  onClear: () => void;
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-muted-foreground">
-          From YouTube
-        </h3>
-        <div className="flex items-center space-x-2">
-          {videos.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={onClear}>
-              Clear Results
-            </Button>
-          )}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onSearch}
-            disabled={searchQuery.length < 2 || isLoading}
-          >
-            {isLoading ? <Spinner className="h-4 w-4" /> : "Search YouTube"}
-          </Button>
-        </div>
+      <div className="flex items-center justify-end mb-2">
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={onSearch}
+          disabled={searchQuery.length < 2 || isLoading}
+        >
+          {isLoading ? <Spinner className="h-4 w-4" /> : "Search"}
+        </Button>
       </div>
-      {videos.length > 0 ? (
+      {videos.length > 0 && (
         <div className="space-y-1 max-h-48 overflow-auto">
           {videos.map((video) => (
             <VideoItem
@@ -115,12 +67,6 @@ function YouTubeSearchResults({
               onClick={() => onAddVideo(video)}
             />
           ))}
-        </div>
-      ) : (
-        <div className="p-2 text-muted-foreground text-center border rounded-md">
-          {searchQuery.length >= 2
-            ? 'Click "Search YouTube" to find videos'
-            : "Type to search YouTube videos"}
         </div>
       )}
     </div>
@@ -136,23 +82,10 @@ export default function AddVideoDialog({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [remoteVideos, setRemoteVideos] = useState<Video[]>([]);
-  const [localVideos, setLocalVideos] = useState<Video[]>([]);
+
   const [open, setOpen] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [searchLoading, setSearchLoading] = useState(false);
-
-  useEffect(() => {
-    const debounceTimeout = setTimeout(async () => {
-      if (searchQuery.length >= 2) {
-        const results = await searchVideos(searchQuery);
-        setLocalVideos(results);
-      } else {
-        setLocalVideos([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(debounceTimeout);
-  }, [searchQuery]);
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery) return;
@@ -180,6 +113,7 @@ export default function AddVideoDialog({
               title: searchResult.title,
               thumbnail: searchResult.thumbnail,
               author: searchResult.channelTitle,
+              duration: searchResult.duration,
             } as Video;
           })
         );
@@ -194,12 +128,7 @@ export default function AddVideoDialog({
   const handleOpen = useCallback(() => {
     setSearchQuery("");
     setRemoteVideos([]);
-    setLocalVideos([]);
     setOpen(true);
-  }, []);
-
-  const handleClearResults = useCallback(() => {
-    setRemoteVideos([]);
   }, []);
 
   const searchContent = (
@@ -217,22 +146,15 @@ export default function AddVideoDialog({
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
       />
-      {searchQuery.length >= 2 && (
-        <div className="space-y-4">
-          <LocalSearchResults
-            videos={localVideos}
-            onSelectVideo={onSelectVideo}
-          />
-          <YouTubeSearchResults
-            videos={remoteVideos}
-            searchQuery={searchQuery}
-            isLoading={searchLoading}
-            onAddVideo={onAddVideo}
-            onSearch={handleSearch}
-            onClear={handleClearResults}
-          />
-        </div>
-      )}
+      <div className="space-y-4">
+        <YouTubeSearchResults
+          videos={remoteVideos}
+          searchQuery={searchQuery}
+          isLoading={searchLoading}
+          onAddVideo={onAddVideo}
+          onSearch={handleSearch}
+        />
+      </div>
     </form>
   );
 
@@ -310,7 +232,9 @@ function VideoItem({ video, onClick }: { video: Video; onClick: () => void }) {
         />
         <div>
           <p className="font-medium line-clamp-1">{video.title}</p>
-          <p className="text-sm text-muted-foreground">{video.author}</p>
+          <p className="text-sm text-muted-foreground">
+            {video.author} &bull; {video.duration}
+          </p>
         </div>
         {loading && (
           <div className="absolute right-2">
