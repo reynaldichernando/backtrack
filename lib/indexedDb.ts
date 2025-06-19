@@ -1,20 +1,20 @@
 import { MediaBinaryData } from "./model/MediaBinaryData";
 import { Video } from "./model/Video";
 
-const dbName = 'db';
+const dbName = "db";
 const dbVersion = 1;
 
 let db: IDBDatabase;
 
-const videoStoreName = 'video';
-const videoBinaryStoreName = 'video_binary';
+const videoStoreName = "video";
+const videoBinaryStoreName = "video_binary";
 
 const openDB = async () => {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(dbName, dbVersion);
 
     request.onerror = (event) => {
-      console.error('Error opening database', event);
+      console.error("Error opening database", event);
       reject(event);
     };
 
@@ -25,8 +25,8 @@ const openDB = async () => {
 
     request.onupgradeneeded = (event) => {
       db = (event.target as IDBOpenDBRequest).result;
-      db.createObjectStore(videoStoreName, { keyPath: 'id' });
-      db.createObjectStore(videoBinaryStoreName, { keyPath: 'id' });
+      db.createObjectStore(videoStoreName, { keyPath: "id" });
+      db.createObjectStore(videoBinaryStoreName, { keyPath: "id" });
     };
   });
 };
@@ -34,7 +34,7 @@ const openDB = async () => {
 export const addVideo = async (video: Video) => {
   await openDB();
   return new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction([videoStoreName], 'readwrite');
+    const transaction = db.transaction([videoStoreName], "readwrite");
     const objectStore = transaction.objectStore(videoStoreName);
     const request = objectStore.add(video);
 
@@ -51,7 +51,7 @@ export const addVideo = async (video: Video) => {
 export const deleteVideo = async (id: string) => {
   await openDB();
   return new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction([videoStoreName], 'readwrite');
+    const transaction = db.transaction([videoStoreName], "readwrite");
     const objectStore = transaction.objectStore(videoStoreName);
     const request = objectStore.delete(id);
 
@@ -68,7 +68,7 @@ export const deleteVideo = async (id: string) => {
 export const getAllVideos = async () => {
   await openDB();
   return new Promise<Video[]>((resolve, reject) => {
-    const transaction = db.transaction([videoStoreName], 'readonly');
+    const transaction = db.transaction([videoStoreName], "readonly");
     const objectStore = transaction.objectStore(videoStoreName);
     const request = objectStore.openCursor();
 
@@ -92,10 +92,28 @@ export const getAllVideos = async () => {
   });
 };
 
+export const videoExists = async (id: string) => {
+  await openDB();
+  return new Promise<boolean>((resolve, reject) => {
+    const transaction = db.transaction([videoStoreName], "readonly");
+    const objectStore = transaction.objectStore(videoStoreName);
+    const request = objectStore.get(id);
+
+    request.onsuccess = function (event) {
+      const result = (event.target as IDBRequest).result;
+      resolve(result !== undefined);
+    };
+
+    request.onerror = function (event) {
+      reject(event);
+    };
+  });
+};
+
 export const saveVideoBinary = async (id: string, data: ArrayBuffer) => {
   await openDB();
   return new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction([videoBinaryStoreName], 'readwrite');    
+    const transaction = db.transaction([videoBinaryStoreName], "readwrite");
     const objectStore = transaction.objectStore(videoBinaryStoreName);
     const request = objectStore.put({ id, data });
 
@@ -112,7 +130,7 @@ export const saveVideoBinary = async (id: string, data: ArrayBuffer) => {
 export const getVideoBinary = async (id: string) => {
   await openDB();
   return new Promise<ArrayBuffer>((resolve, reject) => {
-    const transaction = db.transaction([videoBinaryStoreName], 'readonly');
+    const transaction = db.transaction([videoBinaryStoreName], "readonly");
     const objectStore = transaction.objectStore(videoBinaryStoreName);
     const request = objectStore.get(id);
 
@@ -126,10 +144,14 @@ export const getVideoBinary = async (id: string) => {
   });
 };
 
-export const saveMediaBinary = async (id: string, video: ArrayBuffer, audio: ArrayBuffer) => {
+export const saveMediaBinary = async (
+  id: string,
+  video: ArrayBuffer,
+  audio: ArrayBuffer
+) => {
   await openDB();
   return new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction([videoBinaryStoreName], 'readwrite');
+    const transaction = db.transaction([videoBinaryStoreName], "readwrite");
     const objectStore = transaction.objectStore(videoBinaryStoreName);
     const request = objectStore.put({ id, video, audio });
 
@@ -146,7 +168,7 @@ export const saveMediaBinary = async (id: string, video: ArrayBuffer, audio: Arr
 export const getMediaBinary = async (id: string) => {
   await openDB();
   return new Promise<MediaBinaryData>((resolve, reject) => {
-    const transaction = db.transaction([videoBinaryStoreName], 'readonly');
+    const transaction = db.transaction([videoBinaryStoreName], "readonly");
     const objectStore = transaction.objectStore(videoBinaryStoreName);
     const request = objectStore.get(id);
 
@@ -163,7 +185,7 @@ export const getMediaBinary = async (id: string) => {
 export const deleteMediaBinary = async (id: string) => {
   await openDB();
   return new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction([videoBinaryStoreName], 'readwrite');
+    const transaction = db.transaction([videoBinaryStoreName], "readwrite");
     const objectStore = transaction.objectStore(videoBinaryStoreName);
     const request = objectStore.delete(id);
 

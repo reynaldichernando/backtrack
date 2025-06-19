@@ -6,6 +6,7 @@ import {
   deleteVideo,
   deleteMediaBinary,
   getMediaBinary,
+  videoExists,
 } from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
 import { corsFetch } from "@/lib/utils";
@@ -147,6 +148,12 @@ export default function Main() {
   };
 
   const handleAddVideo = async (video: Video) => {
+    const existingVideo = await videoExists(video.id);
+    if (existingVideo) {
+      toast("Video already exists");
+      return;
+    }
+
     const thumbnailResponse = await corsFetch(video.thumbnail);
     const thumbnailBuffer =
       thumbnailResponse.status === 404
