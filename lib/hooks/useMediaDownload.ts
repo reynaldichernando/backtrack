@@ -64,7 +64,7 @@ export function useMediaDownload() {
       // Split the media into video and audio using ffmpeg
       const { video, audio } = await splitMediaToArrayBuffers(media);
 
-      // await saveMediaBinary(videoId, video, audio);
+      await saveMediaBinary(videoId, video, audio);
 
       const videoBlob = new Blob([video], { type: "video/mp4" });
       const audioBlob = new Blob([audio], { type: "audio/mp4" });
