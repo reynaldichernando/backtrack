@@ -8,7 +8,7 @@ import {
 } from "@/lib/utils";
 import { fetchVideoInfo, searchYoutubeVideos } from "@/lib/youtube";
 import { Search } from "lucide-react";
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import Spinner from "./ui/spinner";
