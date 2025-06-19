@@ -67,7 +67,7 @@ async function fetchVideoInfoRaw(videoId: string): Promise<unknown> {
       context: {
         client: {
           clientName: "ANDROID",
-          clientVersion: "18.11.34",
+          clientVersion: "19.02.39",
           androidSdkVersion: 30,
           hl: "en",
         },
@@ -76,10 +76,10 @@ async function fetchVideoInfoRaw(videoId: string): Promise<unknown> {
     headers: {
       "Content-Type": "application/json",
       "X-YouTube-Client-Name": "3",
-      "X-YouTube-Client-Version": "18.11.34",
+      "X-YouTube-Client-Version": "19.02.39",
       "x-corsfix-headers": JSON.stringify({
         "user-agent":
-          "com.google.android.youtube/18.11.34 (Linux; U; Android 11) gzip",
+          "com.google.android.youtube/19.02.39 (Linux; U; Android 11) gzip",
         origin: "https://www.youtube.com",
       }),
     },
