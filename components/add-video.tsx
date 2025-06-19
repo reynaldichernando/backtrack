@@ -8,26 +8,11 @@ import {
 } from "@/lib/utils";
 import { fetchVideoInfo, searchYoutubeVideos } from "@/lib/youtube";
 import { Search } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import Spinner from "./ui/spinner";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "./ui/drawer";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog";
-import { useMediaQuery } from "@/components/hooks/useMediaQuery";
 
 export default function AddVideoDialog({
   onAddVideo,
@@ -36,10 +21,12 @@ export default function AddVideoDialog({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [remoteVideos, setRemoteVideos] = useState<Video[]>([]);
-
-  const [open, setOpen] = useState(false);
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const [isActive, setIsActive] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery) return;
@@ -68,121 +55,110 @@ export default function AddVideoDialog({
     }
   }, [searchQuery]);
 
-  const handleOpen = useCallback(() => {
-    setSearchQuery("");
-    setRemoteVideos([]);
-    setOpen(true);
+  const handleFocus = useCallback(() => {
+    setIsActive(true);
   }, []);
 
-  const searchContent = (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        handleSearch();
-      }}
-      className="space-y-4"
-    >
-      <Input
-        data-autofocus
-        autoFocus
-        placeholder="Type keyword or paste YouTube link"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-      />
-      <div className="space-y-4">
-        <AddVideoSearch
-          videos={remoteVideos}
-          searchQuery={searchQuery}
-          isLoading={searchLoading}
-          onAddVideo={onAddVideo}
-          onSearch={handleSearch}
+  const handleReset = useCallback(() => {
+    setIsActive(false);
+    setSearchQuery("");
+    setRemoteVideos([]);
+    setSearchLoading(false);
+    inputRef.current?.blur();
+  }, []);
+
+  const handleVideoAdd = useCallback(
+    (video: Video) => {
+      onAddVideo(video);
+    },
+    [onAddVideo]
+  );
+
+  return (
+    <>
+      {/* Overlay Layer - handles closing */}
+      {isActive && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleReset();
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleReset();
+          }}
         />
-      </div>
-    </form>
-  );
-
-  if (isDesktop) {
-    return (
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button
-            className="w-full justify-start text-left rounded-2xl"
-            variant="outline"
-            onClick={handleOpen}
-          >
-            <Search className="mr-2 h-4 w-4" />
-            Search
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Search Video</DialogTitle>
-          </DialogHeader>
-          {searchContent}
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  return (
-    <Drawer open={open} onOpenChange={setOpen} repositionInputs={false}>
-      <DrawerTrigger asChild>
-        <Button
-          className="w-full justify-start text-left rounded-2xl"
-          variant="outline"
-          onClick={handleOpen}
-        >
-          <Search className="mr-2 h-4 w-4" />
-          Search
-        </Button>
-      </DrawerTrigger>
-      <DrawerContent className="px-safe-offset-4 pb-safe-offset-4">
-        <DrawerHeader>
-          <DrawerTitle>Search Video</DrawerTitle>
-        </DrawerHeader>
-        {searchContent}
-      </DrawerContent>
-    </Drawer>
-  );
-}
-
-function AddVideoSearch({
-  videos,
-  searchQuery,
-  isLoading,
-  onAddVideo,
-  onSearch,
-}: {
-  videos: Video[];
-  searchQuery: string;
-  isLoading: boolean;
-  onAddVideo: (video: Video) => void;
-  onSearch: () => void;
-}) {
-  return (
-    <div>
-      <div className="flex items-center justify-end mb-2">
-        <Button
-          variant="secondary"
-          className="w-full"
-          onClick={onSearch}
-          disabled={searchQuery.length < 2 || isLoading}
-        >
-          {isLoading ? <Spinner className="h-4 w-4" /> : "Search"}
-        </Button>
-      </div>
-      {videos.length > 0 && (
-        <div className="space-y-1 max-h-48 overflow-auto">
-          {videos.map((video) => (
-            <AddVideoItem
-              key={video.id}
-              video={video}
-              onClick={() => onAddVideo(video)}
-            />
-          ))}
-        </div>
       )}
-    </div>
+
+      {/* Component Layer */}
+      <div className="relative" ref={containerRef}>
+        {/* Main Content */}
+        <div className={`relative ${isActive ? "z-40" : ""}`}>
+          {/* Input */}
+          <div className="relative">
+            <Input
+              ref={inputRef}
+              placeholder="Type keyword or paste YouTube link"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={handleFocus}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && searchQuery.length >= 2) {
+                  e.preventDefault();
+                  handleSearch();
+                }
+              }}
+              className="w-full rounded-2xl pr-10"
+            />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          </div>
+
+          {/* Search Panel */}
+          {isActive && (
+            <div
+              ref={panelRef}
+              className="absolute top-full mt-2 w-full bg-background border rounded-lg shadow-lg z-40 p-4"
+              onClick={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+            >
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSearch();
+                }}
+                className="space-y-4"
+              >
+                {/* Search Button */}
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  className="w-full"
+                  disabled={searchQuery.length < 2 || searchLoading}
+                >
+                  {searchLoading ? <Spinner className="h-4 w-4" /> : "Search"}
+                </Button>
+
+                {/* Search Results */}
+                {remoteVideos.length > 0 && (
+                  <div className="space-y-1 max-h-64 overflow-auto">
+                    {remoteVideos.map((video) => (
+                      <AddVideoItem
+                        key={video.id}
+                        video={video}
+                        onClick={() => handleVideoAdd(video)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </form>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -210,7 +186,7 @@ function AddVideoItem({
   return (
     <div
       key={video.id}
-      className="p-2 hover:bg-accent cursor-pointer relative"
+      className="p-2 hover:bg-accent cursor-pointer relative rounded-md"
       onClick={handleClick}
     >
       <div className="flex items-center space-x-2">
@@ -219,14 +195,14 @@ function AddVideoItem({
           alt={video.title}
           className="w-12 h-12 object-cover rounded aspect-square"
         />
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="font-medium line-clamp-1">{video.title}</p>
           <p className="text-sm text-muted-foreground">
             {video.author} &bull; {video.duration}
           </p>
         </div>
         {loading && (
-          <div className="absolute right-2">
+          <div className="flex-shrink-0">
             <Spinner className="h-4 w-4" />
           </div>
         )}

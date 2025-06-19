@@ -58,9 +58,9 @@ export default function MiniPlayer({
           className="transition-all duration-300 ease-in-out active:scale-75"
         >
           {isPlaying ? (
-            <Pause className="h-6 w-6" fill="currentColor" />
+            <Pause className="size-10" fill="currentColor" />
           ) : (
-            <Play className="h-6 w-6" fill="currentColor" />
+            <Play className="size-10" fill="currentColor" />
           )}
         </Button>
       </div>

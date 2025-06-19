@@ -104,7 +104,7 @@ export default function Player({
                     onClick={onClickPrevTrack}
                     className="transition-all duration-300 ease-in-out active:scale-75"
                   >
-                    <Rewind className="size-8" fill="currentColor" />
+                    <Rewind className="size-10" fill="currentColor" />
                   </Button>
                   <Button
                     size="icon"
@@ -113,9 +113,9 @@ export default function Player({
                     className="transition-all duration-300 ease-in-out active:scale-75"
                   >
                     {isPlaying ? (
-                      <Pause className="size-8" fill="currentColor" />
+                      <Pause className="size-10" fill="currentColor" />
                     ) : (
-                      <Play className="size-8" fill="currentColor" />
+                      <Play className="size-10" fill="currentColor" />
                     )}
                   </Button>
                   <Button
@@ -124,7 +124,7 @@ export default function Player({
                     onClick={onClickNextTrack}
                     className="transition-all duration-300 ease-in-out active:scale-75"
                   >
-                    <FastForward className="size-8" fill="currentColor" />
+                    <FastForward className="size-10" fill="currentColor" />
                   </Button>
                 </div>
               </div>

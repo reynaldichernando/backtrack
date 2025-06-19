@@ -208,7 +208,7 @@ export default function App() {
     <>
       <div className="flex flex-col h-dvh">
         <main className="flex flex-col md:flex-row flex-1 overflow-y-auto md:items-start mt-safe ml-safe mr-safe">
-          <div className="md:sticky top-0 left-0 w-full md:w-1/4 p-4 space-y-2">
+          <div className="sticky top-0 left-0 w-full md:w-1/4 p-4 space-y-2 bg-background z-10">
             <div className="flex items-center space-x-2 my-3">
               <img
                 src="./144.png"

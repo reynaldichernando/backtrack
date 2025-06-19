@@ -13,7 +13,7 @@ export default function MyVideos({
 }) {
   return (
     <>
-      <h2 className="text-xl font-semibold mb-4">My Videos</h2>
+      <h2 className="hidden md:block text-xl font-semibold mb-4">My Videos</h2>
       <div className="space-y-4">
         {videos.length === 0 && (
           <div className="flex items-center justify-center w-full">

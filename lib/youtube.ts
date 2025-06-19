@@ -153,6 +153,7 @@ export async function downloadMedia(
     const end = Math.min(start + CHUNK_SIZE, fileSize);
     const range = `bytes=${start}-${end - 1}`;
 
+    let chunkBytes = 0;
     downloadPromises.push(
       downloadChunk(format.url, range, (bytesReceived: number) => {
         onMediaProgress({
@@ -161,10 +162,16 @@ export async function downloadMedia(
         });
       })
         .then((chunk) => {
+          chunkBytes += chunk.byteLength;
           return chunk;
         })
         .catch((error) => {
           console.error(`Failed to download chunk ${start}-${end}:`, error);
+          // delete failed chunk
+          onMediaProgress({
+            bytes: -chunkBytes,
+            total: fileSize,
+          });
           throw error;
         })
     );
