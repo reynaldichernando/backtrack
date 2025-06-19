@@ -6,11 +6,7 @@ import {
   extractVideoId,
   generateThumbnailUrl,
 } from "@/lib/utils";
-import {
-  fetchVideoInfo,
-  SearchResult,
-  searchYoutubeVideos,
-} from "@/lib/youtube";
+import { fetchVideoInfo, searchYoutubeVideos } from "@/lib/youtube";
 import { Search } from "lucide-react";
 import { useState, useCallback } from "react";
 import { Button } from "./ui/button";
@@ -32,46 +28,6 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
-
-function YouTubeSearchResults({
-  videos,
-  searchQuery,
-  isLoading,
-  onAddVideo,
-  onSearch,
-}: {
-  videos: Video[];
-  searchQuery: string;
-  isLoading: boolean;
-  onAddVideo: (video: Video) => void;
-  onSearch: () => void;
-}) {
-  return (
-    <div>
-      <div className="flex items-center justify-end mb-2">
-        <Button
-          variant="secondary"
-          className="w-full"
-          onClick={onSearch}
-          disabled={searchQuery.length < 2 || isLoading}
-        >
-          {isLoading ? <Spinner className="h-4 w-4" /> : "Search"}
-        </Button>
-      </div>
-      {videos.length > 0 && (
-        <div className="space-y-1 max-h-48 overflow-auto">
-          {videos.map((video) => (
-            <VideoItem
-              key={video.id}
-              video={video}
-              onClick={() => onAddVideo(video)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function AddVideoDialog({
   onAddVideo,
@@ -102,19 +58,8 @@ export default function AddVideoDialog({
           } as Video,
         ]);
       } else {
-        const res = await searchYoutubeVideos(searchQuery);
-        setRemoteVideos(
-          res.map((searchResult: SearchResult) => {
-            const videoId = searchResult.videoId;
-            return {
-              id: videoId,
-              title: searchResult.title,
-              thumbnail: searchResult.thumbnail,
-              author: searchResult.channelTitle,
-              duration: searchResult.duration,
-            } as Video;
-          })
-        );
+        const videos = await searchYoutubeVideos(searchQuery);
+        setRemoteVideos(videos);
       }
     } catch (error) {
       toast("Failed to search");
@@ -145,7 +90,7 @@ export default function AddVideoDialog({
         onChange={(e) => setSearchQuery(e.target.value)}
       />
       <div className="space-y-4">
-        <YouTubeSearchResults
+        <AddVideoSearch
           videos={remoteVideos}
           searchQuery={searchQuery}
           isLoading={searchLoading}
@@ -201,7 +146,53 @@ export default function AddVideoDialog({
   );
 }
 
-function VideoItem({ video, onClick }: { video: Video; onClick: () => void }) {
+function AddVideoSearch({
+  videos,
+  searchQuery,
+  isLoading,
+  onAddVideo,
+  onSearch,
+}: {
+  videos: Video[];
+  searchQuery: string;
+  isLoading: boolean;
+  onAddVideo: (video: Video) => void;
+  onSearch: () => void;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-end mb-2">
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={onSearch}
+          disabled={searchQuery.length < 2 || isLoading}
+        >
+          {isLoading ? <Spinner className="h-4 w-4" /> : "Search"}
+        </Button>
+      </div>
+      {videos.length > 0 && (
+        <div className="space-y-1 max-h-48 overflow-auto">
+          {videos.map((video) => (
+            <AddVideoItem
+              key={video.id}
+              video={video}
+              onClick={() => onAddVideo(video)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddVideoItem({
+  video,
+  onClick,
+}: {
+  video: Video;
+  onClick: () => void;
+}) {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {

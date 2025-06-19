@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { corsFetch } from "./utils";
+import { Video } from "./model/Video";
 
 export interface FormatInfo {
   url: string;
@@ -254,19 +255,7 @@ export async function downloadMedia(
   return downloadFormat(format, id, onMediaProgress);
 }
 
-export interface SearchResult {
-  videoId: string;
-  title: string;
-  thumbnail: string;
-  channelTitle: string;
-  publishedTimeText: string;
-  viewCount: string;
-  duration: string;
-}
-
-export async function searchYoutubeVideos(
-  query: string
-): Promise<SearchResult[]> {
+export async function searchYoutubeVideos(query: string): Promise<Video[]> {
   const res = await corsFetch("https://www.youtube.com/youtubei/v1/search", {
     method: "POST",
     body: JSON.stringify({
@@ -291,22 +280,16 @@ export async function searchYoutubeVideos(
     data.contents?.twoColumnSearchResultsRenderer?.primaryContents
       ?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents || [];
 
-  return (
-    contents
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .filter((item: any) => item.videoRenderer)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map((item: any) => {
-        const video = item.videoRenderer;
-        return {
-          videoId: video.videoId,
-          title: video.title.runs[0].text,
-          thumbnail: video.thumbnail.thumbnails[0].url,
-          channelTitle: video.ownerText.runs[0].text,
-          publishedTimeText: video.publishedTimeText?.simpleText || "",
-          viewCount: video.viewCountText?.simpleText || "0 views",
-          duration: video.lengthText?.simpleText || "",
-        };
-      })
-  );
+  return contents
+    .filter((item: any) => item.videoRenderer)
+    .map((item: any) => {
+      const video = item.videoRenderer;
+      return {
+        id: video.videoId,
+        title: video.title.runs[0].text,
+        thumbnail: video.thumbnail.thumbnails[0].url,
+        author: video.ownerText.runs[0].text,
+        duration: video.lengthText?.simpleText || "",
+      };
+    });
 }
