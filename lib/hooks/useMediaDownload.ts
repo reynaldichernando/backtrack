@@ -44,7 +44,6 @@ export function useMediaDownload() {
         totalDownloaded += progress.bytes;
         const currentPercent = (totalDownloaded / progress.total) * 100;
 
-        console.log(totalDownloaded, progress.total, currentPercent);
         toast.loading(title, {
           id: toastId,
           description: `Downloading... ${Math.round(currentPercent)}%`,
