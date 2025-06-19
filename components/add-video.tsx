@@ -27,7 +27,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
-import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import { useMediaQuery } from "@/components/hooks/useMediaQuery";
 
 export default function AddVideoDialog({
   onAddVideo,

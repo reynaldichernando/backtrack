@@ -3,8 +3,8 @@ import { Video } from "@/lib/model/Video";
 import { corsFetch } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
-import { useMediaDownload } from "@/lib/hooks/useMediaDownload";
-import { useMediaSession } from "@/lib/hooks/useMediaSession";
+import { useMediaDownload } from "@/components/hooks/useMediaDownload";
+import { useMediaSession } from "@/components/hooks/useMediaSession";
 import {
   addVideo,
   deleteVideo,
