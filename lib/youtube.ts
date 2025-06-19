@@ -188,10 +188,33 @@ async function downloadFormat(
 
   const CHUNK_SIZE = 2 * 1024 * 1024;
   const downloadPromises: Promise<ArrayBuffer>[] = [];
+  let fileSize = format.filesize || -1;
+
+  if (fileSize <= 0) {
+    // If filesize is unknown, we need to fetch the file size first
+    try {
+      const response = await corsFetch(format.url, {
+        headers: {
+          "x-corsfix-headers": JSON.stringify({ range: "bytes=0-0" }),
+        },
+      });
+      const contentRange = response.headers.get("Content-Range");
+      if (contentRange) {
+        const match = contentRange.match(/bytes \d+-(\d+)\/(\d+)/);
+        if (match) {
+          fileSize = parseInt(match[2], 10);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch file size:", error);
+      return null;
+    }
+  }
+
   let downloadedSize = 0;
 
-  for (let start = 0; start < format.filesize!; start += CHUNK_SIZE) {
-    const end = Math.min(start + CHUNK_SIZE, format.filesize!);
+  for (let start = 0; start < fileSize; start += CHUNK_SIZE) {
+    const end = Math.min(start + CHUNK_SIZE, fileSize);
     const range = `bytes=${start}-${end - 1}`;
 
     downloadPromises.push(
@@ -200,8 +223,8 @@ async function downloadFormat(
           downloadedSize += chunk.byteLength;
           onProgress?.({
             downloaded: downloadedSize,
-            total: format.filesize!,
-            percent: (downloadedSize / format.filesize!) * 100,
+            total: fileSize,
+            percent: (downloadedSize / fileSize) * 100,
           });
           return chunk;
         })
@@ -225,14 +248,10 @@ async function downloadFormat(
 export async function downloadMedia(
   id: string,
   onMediaProgress?: ProgressCallback
-): Promise<{ media: ArrayBuffer | null }> {
+): Promise<ArrayBuffer | null> {
   const videoInfo = await fetchVideoInfo(id);
-
-  const [media] = await Promise.all([
-    downloadFormat(videoInfo.formats[0], id, onMediaProgress),
-  ]);
-
-  return { media };
+  const format = videoInfo.formats[0];
+  return downloadFormat(format, id, onMediaProgress);
 }
 
 export interface SearchResult {

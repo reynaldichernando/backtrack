@@ -36,7 +36,7 @@ export function useMediaDownload() {
     mediaProgressRef.current = 0;
 
     try {
-      const { media } = await downloadMedia(videoId, (progress) => {
+      const media = await downloadMedia(videoId, (progress) => {
         const newProgress = (progress.percent + mediaProgressRef.current) / 2;
         mediaProgressRef.current = newProgress;
         toast.loading(title, {
