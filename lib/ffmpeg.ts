@@ -32,7 +32,7 @@ export async function splitMediaToArrayBuffers(
   // timestamped names avoid collisions in concurrent calls
   const ts = Date.now();
   const vidOut = `video_${ts}.mp4`; // H-264 track only
-  const audOut = `audio_${ts}.m4a`; // AAC track only (still ISO-BMFF)
+  const audOut = `audio_${ts}.mp4`; // AAC track only (still ISO-BMFF)
 
   await ff.writeFile(filename, new Uint8Array(media));
 

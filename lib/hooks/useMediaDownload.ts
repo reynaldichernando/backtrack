@@ -21,7 +21,7 @@ export function useMediaDownload() {
 
     if (media) {
       const videoBlob = new Blob([media.video], { type: "video/mp4" });
-      const audioBlob = new Blob([media.audio], { type: "audio/m4a" });
+      const audioBlob = new Blob([media.audio], { type: "audio/mp4" });
 
       const videoUrl = URL.createObjectURL(videoBlob);
       const audioUrl = URL.createObjectURL(audioBlob);
@@ -61,7 +61,7 @@ export function useMediaDownload() {
       await saveMediaBinary(videoId, video, audio);
 
       const videoBlob = new Blob([video], { type: "video/mp4" });
-      const audioBlob = new Blob([audio], { type: "audio/m4a" });
+      const audioBlob = new Blob([audio], { type: "audio/mp4" });
 
       const videoUrl = URL.createObjectURL(videoBlob);
       const audioUrl = URL.createObjectURL(audioBlob);
