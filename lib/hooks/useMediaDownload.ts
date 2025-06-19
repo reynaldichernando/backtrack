@@ -1,7 +1,7 @@
 import { downloadMedia } from "@/lib/youtube";
 import { splitMediaToArrayBuffers } from "@/lib/ffmpeg";
 import { toast } from "sonner";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   getMediaBinary,
   saveMediaBinary,
@@ -9,7 +9,6 @@ import {
 
 export function useMediaDownload() {
   const [loading, setLoading] = useState(false);
-  const mediaProgressRef = useRef(0);
 
   const getMedia = async (videoId: string, title: string) => {
     if (loading) {
@@ -36,15 +35,19 @@ export function useMediaDownload() {
       description: "Downloading... 0%",
     });
     setLoading(true);
-    mediaProgressRef.current = 0;
+
+    // Create a synchronous counter using closure
+    let totalDownloaded = 0;
 
     try {
       const media = await downloadMedia(videoId, (progress) => {
-        const newProgress = (progress.percent + mediaProgressRef.current) / 2;
-        mediaProgressRef.current = newProgress;
+        totalDownloaded += progress.bytes;
+        const currentPercent = (totalDownloaded / progress.total) * 100;
+
+        console.log(totalDownloaded, progress.total, currentPercent);
         toast.loading(title, {
           id: toastId,
-          description: `Downloading... ${Math.round(newProgress)}%`,
+          description: `Downloading... ${Math.round(currentPercent)}%`,
         });
       });
 
@@ -61,7 +64,7 @@ export function useMediaDownload() {
       // Split the media into video and audio using ffmpeg
       const { video, audio } = await splitMediaToArrayBuffers(media);
 
-      await saveMediaBinary(videoId, video, audio);
+      // await saveMediaBinary(videoId, video, audio);
 
       const videoBlob = new Blob([video], { type: "video/mp4" });
       const audioBlob = new Blob([audio], { type: "audio/mp4" });
@@ -86,7 +89,6 @@ export function useMediaDownload() {
       throw error;
     } finally {
       setLoading(false);
-      mediaProgressRef.current = 0;
     }
   };
 

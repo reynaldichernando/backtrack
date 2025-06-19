@@ -116,83 +116,20 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoInfo> {
   };
 }
 
-async function downloadChunk(
-  url: string,
-  range: string,
-  videoId: string,
-  format_id: string,
-  retries = 5
-): Promise<ArrayBuffer> {
-  const TIMEOUT_MS = 15000;
-
-  for (let attempt = 0; attempt < retries; attempt++) {
-    try {
-      const controller = new AbortController();
-
-      const timeoutPromise = new Promise<ArrayBuffer>((_, reject) => {
-        setTimeout(() => {
-          controller.abort();
-          reject(new Error("Request timed out"));
-        }, TIMEOUT_MS);
-      });
-
-      const response = await corsFetch(url, {
-        headers: { "x-corsfix-headers": JSON.stringify({ range }) },
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await Promise.race([response.arrayBuffer(), timeoutPromise]);
-    } catch (error) {
-      if (attempt === retries - 1) throw error;
-
-      // Get fresh video info and URL before retrying
-      try {
-        const freshVideoInfo = await fetchVideoInfo(videoId);
-        const freshFormat = freshVideoInfo.formats.find(
-          (f) => f.format_id === format_id
-        );
-        if (freshFormat) {
-          url = freshFormat.url;
-          console.log("Got fresh URL for retry");
-        }
-      } catch (refreshError) {
-        console.error("Failed to refresh video URL:", refreshError);
-      }
-      await new Promise((resolve) =>
-        setTimeout(resolve, Math.pow(2, attempt) * 1000)
-      );
-    }
-  }
-  throw new Error("Failed to download chunk after all retries");
-}
-
-interface DownloadProgress {
-  downloaded: number;
-  total: number;
-  percent: number;
-}
-
-// Add this type for the progress callback
-type ProgressCallback = (progress: DownloadProgress) => void;
-
-// Update the downloadFormat function to accept a progress callback
-async function downloadFormat(
-  format: FormatInfo | null,
-  videoId: string,
-  onProgress?: ProgressCallback
+export async function downloadMedia(
+  id: string,
+  onMediaProgress: (progress: { bytes: number; total: number }) => void
 ): Promise<ArrayBuffer | null> {
+  const videoInfo = await fetchVideoInfo(id);
+  const format = videoInfo.formats[0];
   if (!format) return null;
 
   const CHUNK_SIZE = 2 * 1024 * 1024;
   const downloadPromises: Promise<ArrayBuffer>[] = [];
   let fileSize = format.filesize || -1;
 
+  // handle empty file size
   if (fileSize <= 0) {
-    // If filesize is unknown, we need to fetch the file size first
     try {
       const response = await corsFetch(format.url, {
         headers: {
@@ -212,21 +149,18 @@ async function downloadFormat(
     }
   }
 
-  let downloadedSize = 0;
-
   for (let start = 0; start < fileSize; start += CHUNK_SIZE) {
     const end = Math.min(start + CHUNK_SIZE, fileSize);
     const range = `bytes=${start}-${end - 1}`;
 
     downloadPromises.push(
-      downloadChunk(format.url, range, videoId, format.format_id)
+      downloadChunk(format.url, range, (bytesReceived: number) => {
+        onMediaProgress({
+          bytes: bytesReceived,
+          total: fileSize,
+        });
+      })
         .then((chunk) => {
-          downloadedSize += chunk.byteLength;
-          onProgress?.({
-            downloaded: downloadedSize,
-            total: fileSize,
-            percent: (downloadedSize / fileSize) * 100,
-          });
           return chunk;
         })
         .catch((error) => {
@@ -245,14 +179,78 @@ async function downloadFormat(
   }
 }
 
-// Update the downloadMedia function to include progress tracking
-export async function downloadMedia(
-  id: string,
-  onMediaProgress?: ProgressCallback
-): Promise<ArrayBuffer | null> {
-  const videoInfo = await fetchVideoInfo(id);
-  const format = videoInfo.formats[0];
-  return downloadFormat(format, id, onMediaProgress);
+async function downloadChunk(
+  url: string,
+  range: string,
+  onProgress: (bytesReceived: number) => void,
+  retries = 5
+): Promise<ArrayBuffer> {
+  const TIMEOUT_MS = 15000;
+
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const controller = new AbortController();
+
+      const timeoutPromise = new Promise<ArrayBuffer>((_, reject) => {
+        setTimeout(() => {
+          controller.abort();
+          reject(new Error("Request timed out"));
+        }, TIMEOUT_MS);
+      });
+
+      const downloadPromise = async (): Promise<ArrayBuffer> => {
+        const response = await corsFetch(url, {
+          headers: { "x-corsfix-headers": JSON.stringify({ range }) },
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Stream the response and call progress callback for each chunk
+        if (response.body) {
+          const reader = response.body.getReader();
+          const chunks: Uint8Array[] = [];
+
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              chunks.push(value);
+              onProgress(value.byteLength);
+            }
+
+            // Combine all chunks into a single ArrayBuffer
+            const totalLength = chunks.reduce(
+              (sum, chunk) => sum + chunk.byteLength,
+              0
+            );
+            const result = new Uint8Array(totalLength);
+            let offset = 0;
+            for (const chunk of chunks) {
+              result.set(chunk, offset);
+              offset += chunk.byteLength;
+            }
+            return result.buffer;
+          } finally {
+            reader.releaseLock();
+          }
+        }
+        return new ArrayBuffer(0); // Fallback if no body
+      };
+
+      return await Promise.race([downloadPromise(), timeoutPromise]);
+    } catch (error) {
+      if (attempt === retries - 1) throw error;
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, Math.pow(2, attempt) * 1000)
+      );
+    }
+  }
+  throw new Error("Failed to download chunk after all retries");
 }
 
 export async function searchYoutubeVideos(query: string): Promise<Video[]> {
