@@ -1,8 +1,11 @@
-import { getMediaBinary, saveMediaBinary } from "@/lib/indexedDb";
 import { downloadMedia } from "@/lib/youtube";
 import { splitMediaToArrayBuffers } from "@/lib/ffmpeg";
 import { toast } from "sonner";
 import { useRef, useState } from "react";
+import {
+  getMediaBinary,
+  saveMediaBinary,
+} from "../services/videoBinaryService";
 
 export function useMediaDownload() {
   const [loading, setLoading] = useState(false);

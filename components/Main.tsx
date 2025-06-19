@@ -1,13 +1,4 @@
 "use client";
-
-import {
-  getAllVideos,
-  addVideo,
-  deleteVideo,
-  deleteMediaBinary,
-  getMediaBinary,
-  videoExists,
-} from "@/lib/indexedDb";
 import { Video } from "@/lib/model/Video";
 import { corsFetch } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
@@ -18,6 +9,16 @@ import MyVideos from "./MyVideos";
 import { toast } from "sonner";
 import { useMediaDownload } from "@/lib/hooks/useMediaDownload";
 import { useMediaSession } from "@/lib/hooks/useMediaSession";
+import {
+  addVideo,
+  deleteVideo,
+  getAllVideos,
+  videoExists,
+} from "@/lib/services/videoService";
+import {
+  deleteMediaBinary,
+  getMediaBinary,
+} from "@/lib/services/videoBinaryService";
 
 export default function Main() {
   const [videos, setVideos] = useState<Video[]>([]);
