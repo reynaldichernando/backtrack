@@ -156,13 +156,13 @@ export async function downloadMedia(
     let chunkBytes = 0;
     downloadPromises.push(
       downloadChunk(format.url, range, (bytesReceived: number) => {
+        chunkBytes += bytesReceived;
         onMediaProgress({
           bytes: bytesReceived,
           total: fileSize,
         });
       })
         .then((chunk) => {
-          chunkBytes += chunk.byteLength;
           return chunk;
         })
         .catch((error) => {
